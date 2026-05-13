@@ -312,6 +312,13 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
     </div>
     <div id="g-tab-activity" class="g-page">
       <div class="section-title">活動スケジュール</div>
+      <div class="cal-nav" style="margin-top:8px;">
+        <button class="cal-nav-btn" onclick="gCalPrev()">◀</button>
+        <div class="cal-month-label" id="g-cal-month-label"></div>
+        <button class="cal-nav-btn" onclick="gCalNext()">▶</button>
+      </div>
+      <div class="cal-grid" id="g-cal-grid" style="margin-bottom:28px;"></div>
+      <div class="section-title" style="font-size:14px;margin-bottom:12px;">📋 予定一覧</div>
       <div id="g-activity-list"></div>
     </div>
     <div id="g-tab-policy" class="g-page">
@@ -445,7 +452,7 @@ const INIT_SUPPORTERS = [
   {id:'1000000000001',name:'大友勤之',area:'王子保地区',tel:'080-9899-2659',relation:'知人',level:'協力者',note:'',email:'',age:'',gender:'',addr:'',created:'2025-05-11T00:00:00.000Z'},
   {id:'1000000000002',name:'土持',area:'その他',tel:'080-3971-9995',relation:'紹介',level:'協力者',note:'',email:'',age:'',gender:'',addr:'',created:'2025-05-11T00:00:00.000Z'},
 ];
-let supporters=[], schedules=[], currentMode='', calYear, calMonth, deleteTargetId=null;
+let supporters=[], schedules=[], currentMode='', calYear, calMonth, gCalYear, gCalMonth, deleteTargetId=null;
 
 function loadData(){
   const s=localStorage.getItem('wk_supporters');
@@ -558,7 +565,7 @@ function showAdminPw(){document.getElementById('lock-mode-select').style.display
 function loginAdmin(){const pw=document.getElementById('pw-input').value;if(pw===ADMIN_PASSWORD){document.getElementById('lock-error').style.display='none';enterAdmin();}else{document.getElementById('lock-error').style.display='block';document.getElementById('pw-input').value='';}}
 function loginGeneral(){enterGeneral();}
 function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
-function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';renderGeneralHome();renderGeneralActivity();}
+function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';renderGeneralHome();const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
 function logoutToLock(){sessionStorage.removeItem('wk_mode');currentMode='';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('lock-screen').style.display='flex';showModeSelect();}
 
 /* ── GENERAL ── */
@@ -570,10 +577,57 @@ function renderGeneralHome(){
   if(!supporters.length){list.innerHTML='<div class="empty"><div class="empty-icon">👥</div>まだ支援者が登録されていません</div>';return;}
   supporters.forEach(s=>{const card=document.createElement('div');card.className='supporter-card';const init=s.name?s.name[0]:'？';card.innerHTML=`<div class="supporter-card-avatar">${init}</div><div><div class="supporter-card-name">${escHtml(s.name)}</div><div class="supporter-card-area">${escHtml(s.area||'')}</div></div>`;list.appendChild(card);});
 }
+function renderGeneralCalendar(){
+  const now=new Date();
+  if(gCalYear===undefined){gCalYear=now.getFullYear();gCalMonth=now.getMonth();}
+  document.getElementById('g-cal-month-label').textContent=`${gCalYear}年 ${gCalMonth+1}月`;
+  const grid=document.getElementById('g-cal-grid');
+  grid.innerHTML='';
+  ['日','月','火','水','木','金','土'].forEach(d=>{const h=document.createElement('div');h.className='cal-head';h.textContent=d;grid.appendChild(h);});
+  const first=new Date(gCalYear,gCalMonth,1);
+  const last=new Date(gCalYear,gCalMonth+1,0);
+  for(let i=0;i<first.getDay();i++){const c=document.createElement('div');c.className='cal-cell other-month';grid.appendChild(c);}
+  for(let d=1;d<=last.getDate();d++){
+    const ds=`${gCalYear}-${String(gCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=now.getFullYear()===gCalYear&&now.getMonth()===gCalMonth&&now.getDate()===d;
+    const cell=document.createElement('div');
+    cell.className='cal-cell'+(isToday?' today':'');
+    cell.innerHTML=`<div class="cal-day">${d}</div>`;
+    schedules.filter(s=>s.date===ds).forEach(ev=>{
+      const e=document.createElement('div');
+      e.className='cal-event';
+      e.style.cssText='cursor:pointer;';
+      e.textContent=(ev.time?ev.time+' ':'')+ev.name;
+      e.onclick=()=>showEventDetail(ev.id);
+      cell.appendChild(e);
+    });
+    grid.appendChild(cell);
+  }
+  renderGeneralActivity();
+}
+function gCalPrev(){gCalMonth--;if(gCalMonth<0){gCalMonth=11;gCalYear--;}renderGeneralCalendar();}
+function gCalNext(){gCalMonth++;if(gCalMonth>11){gCalMonth=0;gCalYear++;}renderGeneralCalendar();}
+function showEventDetail(id){
+  const s=schedules.find(x=>x.id===id);
+  if(!s)return;
+  const d=s.date?new Date(s.date):null;
+  const ds=d?`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`:'日付未定';
+  alert(`📅 ${escHtml(s.name)}\n\n日時：${ds}${s.time?' '+s.time:''}\n場所：${s.place||'未設定'}\n担当：${s.person||'未設定'}\n備考：${s.note||'なし'}`);
+}
 function renderGeneralActivity(){
   const list=document.getElementById('g-activity-list'); list.innerHTML='';
-  if(!schedules.length){list.innerHTML='<div class="empty"><div class="empty-icon">📅</div>予定はありません</div>';return;}
-  [...schedules].sort((a,b)=>(a.date||'')<(b.date||'')?-1:1).forEach(s=>{const d=s.date?new Date(s.date):null;const ds=d?`${d.getMonth()+1}月${d.getDate()}日`:'日付未定';const div=document.createElement('div');div.className='activity-item';div.innerHTML=`<div class="activity-date">${ds}<br>${s.time||''}</div><div><div class="activity-name">${escHtml(s.name)}</div><div class="activity-meta">${s.place?'📍 '+escHtml(s.place):''}${s.person?'　👤 '+escHtml(s.person):''}</div></div>`;list.appendChild(div);});
+  const upcoming=[...schedules].filter(s=>s.date>='').sort((a,b)=>(a.date||'')<(b.date||'')?-1:1);
+  if(!upcoming.length){list.innerHTML='<div class="empty"><div class="empty-icon">📅</div>予定はありません</div>';return;}
+  upcoming.forEach(s=>{
+    const d=s.date?new Date(s.date):null;
+    const ds=d?`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`:'日付未定';
+    const isPast=d&&d<new Date();
+    const div=document.createElement('div');
+    div.className='activity-item';
+    div.style.cssText=isPast?'opacity:0.55;':'';
+    div.innerHTML=`<div class="activity-date">${ds}<br><span style="font-size:11px;">${s.time||''}</span></div><div style="flex:1;"><div class="activity-name">${escHtml(s.name)}</div><div class="activity-meta">${s.place?'📍 '+escHtml(s.place)+'　':''}${s.person?'👤 '+escHtml(s.person):''}${isPast?'　<span style="font-size:10px;color:#aaa;">終了</span>':''}</div></div>`;
+    list.appendChild(div);
+  });
 }
 function generalRegister(){
   const name=document.getElementById('g-reg-name').value.trim();
@@ -598,7 +652,7 @@ function openDeleteModal(id){deleteTargetId=id;openModal('modal-delete');}
 function confirmDelete(){if(!deleteTargetId)return;supporters=supporters.filter(s=>s.id!==deleteTargetId);deleteTargetId=null;saveData();closeModal('modal-delete');renderSupporters();renderDashboard();}
 function openScheduleModal(date){document.getElementById('modal-schedule-title').textContent='予定追加';document.getElementById('s-edit-id').value='';document.getElementById('s-name').value='';document.getElementById('s-date').value=date||'';document.getElementById('s-time').value='';document.getElementById('s-place').value='';document.getElementById('s-person').value='';document.getElementById('s-status').value='予定';document.getElementById('s-note').value='';openModal('modal-schedule');}
 function openEditScheduleModal(id){const s=schedules.find(x=>x.id===id);if(!s)return;document.getElementById('modal-schedule-title').textContent='予定編集';document.getElementById('s-edit-id').value=id;document.getElementById('s-name').value=s.name||'';document.getElementById('s-date').value=s.date||'';document.getElementById('s-time').value=s.time||'';document.getElementById('s-place').value=s.place||'';document.getElementById('s-person').value=s.person||'';document.getElementById('s-status').value=s.status||'予定';document.getElementById('s-note').value=s.note||'';openModal('modal-schedule');}
-function saveSchedule(){const name=document.getElementById('s-name').value.trim();if(!name){alert('件名は必須です');return;}const id=document.getElementById('s-edit-id').value;const obj={id:id||Date.now().toString(),name,date:document.getElementById('s-date').value,time:document.getElementById('s-time').value,place:document.getElementById('s-place').value.trim(),person:document.getElementById('s-person').value.trim(),status:document.getElementById('s-status').value,note:document.getElementById('s-note').value.trim()};if(id){const idx=schedules.findIndex(x=>x.id===id);if(idx>=0)schedules[idx]=obj;}else{schedules.unshift(obj);}saveData();closeModal('modal-schedule');renderCalendar();renderDashboard();}
+function saveSchedule(){const name=document.getElementById('s-name').value.trim();if(!name){alert('件名は必須です');return;}const id=document.getElementById('s-edit-id').value;const obj={id:id||Date.now().toString(),name,date:document.getElementById('s-date').value,time:document.getElementById('s-time').value,place:document.getElementById('s-place').value.trim(),person:document.getElementById('s-person').value.trim(),status:document.getElementById('s-status').value,note:document.getElementById('s-note').value.trim()};if(id){const idx=schedules.findIndex(x=>x.id===id);if(idx>=0)schedules[idx]=obj;}else{schedules.unshift(obj);}saveData();closeModal('modal-schedule');renderCalendar();renderDashboard();if(document.getElementById('g-cal-grid'))renderGeneralCalendar();}
 function deleteSchedule(id){if(!confirm('この予定を削除しますか？'))return;schedules=schedules.filter(s=>s.id!==id);saveData();renderCalendar();renderDashboard();}
 function renderCalendar(){const now=new Date();if(calYear===undefined){calYear=now.getFullYear();calMonth=now.getMonth();}document.getElementById('cal-month-label').textContent=`${calYear}年 ${calMonth+1}月`;const grid=document.getElementById('cal-grid');grid.innerHTML='';['日','月','火','水','木','金','土'].forEach(d=>{const h=document.createElement('div');h.className='cal-head';h.textContent=d;grid.appendChild(h);});const first=new Date(calYear,calMonth,1);const last=new Date(calYear,calMonth+1,0);for(let i=0;i<first.getDay();i++){const c=document.createElement('div');c.className='cal-cell other-month';grid.appendChild(c);}for(let d=1;d<=last.getDate();d++){const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const isToday=now.getFullYear()===calYear&&now.getMonth()===calMonth&&now.getDate()===d;const cell=document.createElement('div');cell.className='cal-cell'+(isToday?' today':'');cell.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div class="cal-day">${d}</div><span class="cal-add-btn" title="予定追加" onclick="event.stopPropagation();openScheduleModal('${ds}')">＋</span></div>`;schedules.filter(s=>s.date===ds).forEach(ev=>{const e=document.createElement('div');e.className='cal-event';e.textContent=(ev.time?ev.time+' ':'')+ev.name;e.onclick=(ev2)=>{ev2.stopPropagation();openEditScheduleModal(ev.id);};cell.appendChild(e);});grid.appendChild(cell);}renderScheduleList();}
 function renderScheduleList(){const list=document.getElementById('schedule-list');list.innerHTML='';if(!schedules.length){list.innerHTML='<div class="empty"><div class="empty-icon">📅</div>予定はありません</div>';return;}[...schedules].sort((a,b)=>(a.date||'')<(b.date||'')?-1:1).forEach(s=>{const d=s.date?new Date(s.date):null;const ds=d?`${d.getMonth()+1}月${d.getDate()}日`:'日付未定';const sb=s.status==='完了'?'badge-done':s.status==='進行中'?'badge-wip':'badge-plan';const div=document.createElement('div');div.className='schedule-item';div.innerHTML=`<div class="schedule-date">${ds}<br>${s.time||''}</div><div><div class="schedule-name">${escHtml(s.name)}</div><div class="schedule-meta">${s.place?'📍 '+escHtml(s.place)+'　':''}${s.person?'👤 '+escHtml(s.person)+'　':''}<span class="badge ${sb}">${escHtml(s.status||'予定')}</span></div></div><div class="schedule-actions"><button class="btn btn-edit" onclick="openEditScheduleModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="deleteSchedule('${s.id}')">削除</button></div>`;list.appendChild(div);});}
