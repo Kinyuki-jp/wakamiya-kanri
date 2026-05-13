@@ -92,8 +92,8 @@ body { font-family: 'Noto Sans JP', sans-serif; background: #f0f4f4; color: var(
 .nav-item.active { color: var(--asagi); background: rgba(0,196,208,0.12); border-left-color: var(--asagi); font-weight: 700; }
 .nav-icon { font-size: 16px; width: 20px; text-align: center; }
 .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(0,163,175,0.12); font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.1em; }
-.logout-btn { display: block; width: 100%; background: transparent; color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 8px; font-size: 11px; letter-spacing: 0.08em; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; }
-.logout-btn:hover { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.25); }
+.logout-btn { display: block; width: 100%; background: rgba(0,163,175,0.15); color: var(--asagi); border: 1px solid rgba(0,163,175,0.35); padding: 10px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; border-radius: 4px; }
+.logout-btn:hover { background: rgba(0,163,175,0.28); color: #fff; }
 
 /* ── MAIN ── */
 .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
@@ -181,8 +181,8 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 .schedule-actions { display: flex; gap: 6px; }
 
 /* ── TOAST ── */
-#toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: #1a2e30; color: #ffffff; padding: 12px 28px; font-size: 13px; letter-spacing: 0.08em; border: 1px solid rgba(0,163,175,0.3); z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-#toast.show { opacity: 1; }
+#toast { position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%) translateY(12px); background: #1a2e30; color: #ffffff; padding: 14px 32px; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; border: 2px solid var(--asagi); border-radius: 6px; box-shadow: 0 6px 24px rgba(0,0,0,0.25); z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── GENERAL ── */
 #general-screen { display: none; width: 100%; }
@@ -228,10 +228,11 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 .excel-bar-info { font-size: 12px; color: var(--gray); }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 768px) {
-  .sidebar { width: 60px; }
-  .sidebar-logo, .nav-item span, .sidebar-photo-name, .sidebar-photo-sub, .sidebar-footer { display: none; }
-  .nav-item { justify-content: center; padding: 14px; }
-  .main { margin-left: 60px; }
+  .sidebar { width: 160px; }
+  .sidebar-logo, .sidebar-photo-name, .sidebar-photo-sub { display: none; }
+  .nav-item { padding: 13px 14px; gap: 8px; }
+  .nav-item span { font-size: 12px; }
+  .main { margin-left: 160px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .content { padding: 20px 16px; }
   .topbar { padding: 16px 20px; }
@@ -354,8 +355,11 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
   </div>
   <div class="main">
     <div class="topbar">
-      <div><div class="topbar-title" id="topbar-title">ダッシュボード</div><div class="topbar-sub">後援会管理システム</div></div>
-      <div class="topbar-badge">🔐 管理者</div>
+      <div><div class="topbar-title" id="topbar-title">ダッシュボード</div><div class="topbar-sub" id="topbar-sub">後援会管理システム</div></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="topbar-badge">🔐 管理者｜<span id="topbar-count">0</span>名登録済</div>
+        <button onclick="logoutToLock()" style="background:#e74c3c;color:#fff;border:none;border-radius:5px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:0.05em;" title="ロック画面へ戻る">← 戻る</button>
+      </div>
     </div>
     <div class="content">
       <div id="page-dashboard" class="page active">
@@ -464,7 +468,12 @@ function loadData(){
 function saveData(){
   localStorage.setItem('wk_supporters',JSON.stringify(supporters));
   localStorage.setItem('wk_schedules',JSON.stringify(schedules));
-  showToast('✓ 保存しました');
+  const el=document.getElementById('topbar-count');
+  if(el) el.textContent=supporters.length;
+}
+function saveDataAndToast(msg){
+  saveData();
+  showToast(msg||'✓ 保存しました');
 }
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -564,7 +573,7 @@ function showModeSelect(){document.getElementById('lock-mode-select').style.disp
 function showAdminPw(){document.getElementById('lock-mode-select').style.display='none';document.getElementById('lock-pw-area').classList.add('show');setTimeout(()=>document.getElementById('pw-input').focus(),100);}
 function loginAdmin(){const pw=document.getElementById('pw-input').value;if(pw===ADMIN_PASSWORD){document.getElementById('lock-error').style.display='none';enterAdmin();}else{document.getElementById('lock-error').style.display='block';document.getElementById('pw-input').value='';}}
 function loginGeneral(){enterGeneral();}
-function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
+function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';const tc=document.getElementById('topbar-count');if(tc)tc.textContent=supporters.length;renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
 function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';renderGeneralHome();const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
 function logoutToLock(){sessionStorage.removeItem('wk_mode');currentMode='';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('lock-screen').style.display='flex';showModeSelect();}
 
@@ -647,12 +656,12 @@ function areaTag(a){return a==='王子保地区'?`<span class="badge badge-a">${
 function levelBadge(l){const m={'協力者':'badge-a','支持者':'badge-b','応援者':'badge-b','中立':'badge-c'};return `<span class="badge ${m[l]||'badge-c'}">${escHtml(l||'')}</span>`;}
 function openAddModal(){document.getElementById('modal-supporter-title').textContent='支援者追加';document.getElementById('edit-id').value='';['name','tel','email','age','addr','note'].forEach(f=>document.getElementById('f-'+f).value='');document.getElementById('f-area').value='王子保地区';document.getElementById('f-relation').value='知人';document.getElementById('f-level').value='協力者';document.getElementById('f-gender').value='';openModal('modal-supporter');}
 function openEditModal(id){const s=supporters.find(x=>x.id===id);if(!s)return;document.getElementById('modal-supporter-title').textContent='支援者編集';document.getElementById('edit-id').value=id;document.getElementById('f-name').value=s.name||'';document.getElementById('f-area').value=s.area||'王子保地区';document.getElementById('f-tel').value=s.tel||'';document.getElementById('f-relation').value=s.relation||'知人';document.getElementById('f-level').value=s.level||'協力者';document.getElementById('f-email').value=s.email||'';document.getElementById('f-age').value=s.age||'';document.getElementById('f-gender').value=s.gender||'';document.getElementById('f-addr').value=s.addr||'';document.getElementById('f-note').value=s.note||'';openModal('modal-supporter');}
-function saveSupporter(){const name=document.getElementById('f-name').value.trim();if(!name){alert('氏名は必須です');return;}const id=document.getElementById('edit-id').value;const obj={id:id||Date.now().toString(),name,area:document.getElementById('f-area').value,tel:document.getElementById('f-tel').value.trim(),relation:document.getElementById('f-relation').value,level:document.getElementById('f-level').value,email:document.getElementById('f-email').value.trim(),age:document.getElementById('f-age').value.trim(),gender:document.getElementById('f-gender').value,addr:document.getElementById('f-addr').value.trim(),note:document.getElementById('f-note').value.trim(),created:id?(supporters.find(x=>x.id===id)?.created||new Date().toISOString()):new Date().toISOString()};if(id){const idx=supporters.findIndex(x=>x.id===id);if(idx>=0)supporters[idx]=obj;}else{supporters.unshift(obj);}saveData();closeModal('modal-supporter');renderSupporters();renderDashboard();}
+function saveSupporter(){const name=document.getElementById('f-name').value.trim();if(!name){alert('氏名は必須です');return;}const id=document.getElementById('edit-id').value;const obj={id:id||Date.now().toString(),name,area:document.getElementById('f-area').value,tel:document.getElementById('f-tel').value.trim(),relation:document.getElementById('f-relation').value,level:document.getElementById('f-level').value,email:document.getElementById('f-email').value.trim(),age:document.getElementById('f-age').value.trim(),gender:document.getElementById('f-gender').value,addr:document.getElementById('f-addr').value.trim(),note:document.getElementById('f-note').value.trim(),created:id?(supporters.find(x=>x.id===id)?.created||new Date().toISOString()):new Date().toISOString()};const isNew=!id;if(id){const idx=supporters.findIndex(x=>x.id===id);if(idx>=0)supporters[idx]=obj;}else{supporters.unshift(obj);}saveData();showToast(isNew?`✓ ${obj.name}さんを登録しました（計${supporters.length}名）`:`✓ ${obj.name}さんの情報を更新しました`);closeModal('modal-supporter');renderSupporters();renderDashboard();}
 function openDeleteModal(id){deleteTargetId=id;openModal('modal-delete');}
-function confirmDelete(){if(!deleteTargetId)return;supporters=supporters.filter(s=>s.id!==deleteTargetId);deleteTargetId=null;saveData();closeModal('modal-delete');renderSupporters();renderDashboard();}
+function confirmDelete(){if(!deleteTargetId)return;supporters=supporters.filter(s=>s.id!==deleteTargetId);deleteTargetId=null;saveData();showToast(`✓ 削除しました（残り${supporters.length}名）`);closeModal('modal-delete');renderSupporters();renderDashboard();}
 function openScheduleModal(date){document.getElementById('modal-schedule-title').textContent='予定追加';document.getElementById('s-edit-id').value='';document.getElementById('s-name').value='';document.getElementById('s-date').value=date||'';document.getElementById('s-time').value='';document.getElementById('s-place').value='';document.getElementById('s-person').value='';document.getElementById('s-status').value='予定';document.getElementById('s-note').value='';openModal('modal-schedule');}
 function openEditScheduleModal(id){const s=schedules.find(x=>x.id===id);if(!s)return;document.getElementById('modal-schedule-title').textContent='予定編集';document.getElementById('s-edit-id').value=id;document.getElementById('s-name').value=s.name||'';document.getElementById('s-date').value=s.date||'';document.getElementById('s-time').value=s.time||'';document.getElementById('s-place').value=s.place||'';document.getElementById('s-person').value=s.person||'';document.getElementById('s-status').value=s.status||'予定';document.getElementById('s-note').value=s.note||'';openModal('modal-schedule');}
-function saveSchedule(){const name=document.getElementById('s-name').value.trim();if(!name){alert('件名は必須です');return;}const id=document.getElementById('s-edit-id').value;const obj={id:id||Date.now().toString(),name,date:document.getElementById('s-date').value,time:document.getElementById('s-time').value,place:document.getElementById('s-place').value.trim(),person:document.getElementById('s-person').value.trim(),status:document.getElementById('s-status').value,note:document.getElementById('s-note').value.trim()};if(id){const idx=schedules.findIndex(x=>x.id===id);if(idx>=0)schedules[idx]=obj;}else{schedules.unshift(obj);}saveData();closeModal('modal-schedule');renderCalendar();renderDashboard();if(document.getElementById('g-cal-grid'))renderGeneralCalendar();}
+function saveSchedule(){const name=document.getElementById('s-name').value.trim();if(!name){alert('件名は必須です');return;}const id=document.getElementById('s-edit-id').value;const obj={id:id||Date.now().toString(),name,date:document.getElementById('s-date').value,time:document.getElementById('s-time').value,place:document.getElementById('s-place').value.trim(),person:document.getElementById('s-person').value.trim(),status:document.getElementById('s-status').value,note:document.getElementById('s-note').value.trim()};if(id){const idx=schedules.findIndex(x=>x.id===id);if(idx>=0)schedules[idx]=obj;}else{schedules.unshift(obj);}saveData();showToast(`✓ 「${obj.name}」を${id?'更新':'登録'}しました`);closeModal('modal-schedule');renderCalendar();renderDashboard();if(document.getElementById('g-cal-grid'))renderGeneralCalendar();}
 function deleteSchedule(id){if(!confirm('この予定を削除しますか？'))return;schedules=schedules.filter(s=>s.id!==id);saveData();renderCalendar();renderDashboard();}
 function renderCalendar(){const now=new Date();if(calYear===undefined){calYear=now.getFullYear();calMonth=now.getMonth();}document.getElementById('cal-month-label').textContent=`${calYear}年 ${calMonth+1}月`;const grid=document.getElementById('cal-grid');grid.innerHTML='';['日','月','火','水','木','金','土'].forEach(d=>{const h=document.createElement('div');h.className='cal-head';h.textContent=d;grid.appendChild(h);});const first=new Date(calYear,calMonth,1);const last=new Date(calYear,calMonth+1,0);for(let i=0;i<first.getDay();i++){const c=document.createElement('div');c.className='cal-cell other-month';grid.appendChild(c);}for(let d=1;d<=last.getDate();d++){const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const isToday=now.getFullYear()===calYear&&now.getMonth()===calMonth&&now.getDate()===d;const cell=document.createElement('div');cell.className='cal-cell'+(isToday?' today':'');cell.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div class="cal-day">${d}</div><span class="cal-add-btn" title="予定追加" onclick="event.stopPropagation();openScheduleModal('${ds}')">＋</span></div>`;schedules.filter(s=>s.date===ds).forEach(ev=>{const e=document.createElement('div');e.className='cal-event';e.textContent=(ev.time?ev.time+' ':'')+ev.name;e.onclick=(ev2)=>{ev2.stopPropagation();openEditScheduleModal(ev.id);};cell.appendChild(e);});grid.appendChild(cell);}renderScheduleList();}
 function renderScheduleList(){const list=document.getElementById('schedule-list');list.innerHTML='';if(!schedules.length){list.innerHTML='<div class="empty"><div class="empty-icon">📅</div>予定はありません</div>';return;}[...schedules].sort((a,b)=>(a.date||'')<(b.date||'')?-1:1).forEach(s=>{const d=s.date?new Date(s.date):null;const ds=d?`${d.getMonth()+1}月${d.getDate()}日`:'日付未定';const sb=s.status==='完了'?'badge-done':s.status==='進行中'?'badge-wip':'badge-plan';const div=document.createElement('div');div.className='schedule-item';div.innerHTML=`<div class="schedule-date">${ds}<br>${s.time||''}</div><div><div class="schedule-name">${escHtml(s.name)}</div><div class="schedule-meta">${s.place?'📍 '+escHtml(s.place)+'　':''}${s.person?'👤 '+escHtml(s.person)+'　':''}<span class="badge ${sb}">${escHtml(s.status||'予定')}</span></div></div><div class="schedule-actions"><button class="btn btn-edit" onclick="openEditScheduleModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="deleteSchedule('${s.id}')">削除</button></div>`;list.appendChild(div);});}
