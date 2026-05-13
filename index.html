@@ -429,6 +429,7 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
       <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span><span>ダッシュボード</span></div>
       <div class="nav-item" onclick="showPage('supporters',this)"><span class="nav-icon">👥</span><span>支援者名簿</span></div>
       <div class="nav-item" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span><span>スケジュール</span></div>
+      <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span><span>設定</span></div>
     </nav>
     <div class="sidebar-footer">
       <button class="logout-btn" onclick="logoutToLock()">← ログアウト</button>
@@ -438,8 +439,10 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
   <div class="main">
     <div class="topbar">
       <div><div class="topbar-title" id="topbar-title">ダッシュボード</div><div class="topbar-sub" id="topbar-sub">後援会管理システム</div></div>
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="sync-status" style="font-size:11px;color:#888;letter-spacing:.05em;"></span>
         <div class="topbar-badge">🔐 管理者｜<span id="topbar-count">0</span>名登録済</div>
+        <button onclick="syncFromGitHub(true)" style="background:rgba(0,163,175,.15);color:var(--asagi);border:1px solid rgba(0,163,175,.3);border-radius:5px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;" title="GitHubと同期">🔄 同期</button>
         <button onclick="logoutToLock()" style="background:#e74c3c;color:#fff;border:none;border-radius:5px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:0.05em;" title="ロック画面へ戻る">← 戻る</button>
       </div>
     </div>
@@ -481,6 +484,30 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
         <div class="section-title">スケジュール一覧</div>
         <div id="schedule-list"></div>
       </div>
+
+      <div id="page-settings" class="page">
+        <div class="section-title">⚙️ システム設定</div>
+        <div style="max-width:600px;">
+          <div class="stat-card" style="margin-bottom:20px;">
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">🔑 GitHubトークン設定</div>
+            <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:14px;">支援者データをGitHubに自動保存するためのトークンを設定します。このブラウザにのみ保存されます。</p>
+            <div id="token-status-display" style="font-size:13px;color:#888;margin-bottom:12px;">（未確認）</div>
+            <button class="btn btn-primary" onclick="openTokenModal()">🔑 トークンを設定する</button>
+            <button class="btn btn-outline" onclick="syncFromGitHub(true)" style="margin-left:10px;">🔄 今すぐ同期</button>
+          </div>
+          <div class="stat-card" style="margin-bottom:20px;">
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">📋 Googleフォーム連携</div>
+            <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:14px;">Googleフォームから支援者登録できるように設定します。フォームに回答があると自動的にこのシステムに追加されます。</p>
+            <p style="font-size:12px;color:#888;line-height:1.8;">① Googleフォームを作成 → ② Googleスプレッドシートに回答を記録 → ③ Apps Scriptを設定 → ④ トークンをApps Scriptに登録</p>
+          </div>
+          <div class="stat-card">
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">🗂 データ管理</div>
+            <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:14px;">現在 <strong id="settings-count">0</strong> 名の支援者データが保存されています。</p>
+            <button class="btn btn-outline" onclick="exportCSV()">📥 CSVエクスポート</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -524,6 +551,26 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="modal-token">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-head"><div class="modal-title">🔑 GitHubトークン設定</div><button class="modal-close" onclick="closeModal('modal-token')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:14px;">GitHubにデータを自動保存するためのアクセストークンを設定します。トークンはこのブラウザのみに保存され、サーバーには送信されません。</p>
+      <div class="form-group">
+        <label class="form-label">Personal Access Token（ghp_ または gho_ から始まる文字列）</label>
+        <input class="form-input" id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+      </div>
+      <p id="token-current" style="font-size:11px;color:#27ae60;margin-top:8px;display:none;">✅ 現在のトークン: 設定済み（末尾4桁: <span id="token-last4"></span>）</p>
+      <p style="font-size:11px;color:#999;margin-top:10px;line-height:1.7;">※ GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens で発行。リポジトリ「wakamiya-kanri」への Contents 読み書き権限が必要です。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-token')">キャンセル</button>
+      <button class="btn btn-danger" onclick="clearGHToken()" style="margin-right:auto;">🗑 削除</button>
+      <button class="btn btn-primary" onclick="saveGHToken()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-delete">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head"><div class="modal-title">削除の確認</div><button class="modal-close" onclick="closeModal('modal-delete')">✕</button></div>
@@ -534,6 +581,45 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 
 <script>
 const ADMIN_PASSWORD = 'wakamiya2025';
+/* ── GitHub 同期設定（トークンはlocalStorageに保存、HTMLには書かない） ── */
+const GH_REPO='Kinyuki-jp/wakamiya-kanri';
+const GH_FILE='supporters.json';
+let ghSha='', syncDebounce=null;
+function getGHToken(){return localStorage.getItem('wk_gh_token')||'';}
+function setGHToken(t){if(t)localStorage.setItem('wk_gh_token',t.trim());}
+function openTokenModal(){
+  const existing=getGHToken();
+  const cur=document.getElementById('token-current');
+  const last4=document.getElementById('token-last4');
+  if(existing){cur.style.display='block';last4.textContent=existing.slice(-4);}
+  else{cur.style.display='none';}
+  document.getElementById('token-input').value='';
+  openModal('modal-token');
+}
+function saveGHToken(){
+  const v=document.getElementById('token-input').value.trim();
+  if(!v){showToast('⚠️ トークンを入力してください');return;}
+  setGHToken(v);
+  closeModal('modal-token');
+  showToast('✅ GitHubトークンを保存しました');
+  updateTokenStatusDisplay();
+  pushToGitHub();
+}
+function clearGHToken(){
+  localStorage.removeItem('wk_gh_token');
+  closeModal('modal-token');
+  showToast('🗑 GitHubトークンを削除しました');
+  updateTokenStatusDisplay();
+}
+function updateTokenStatusDisplay(){
+  const el=document.getElementById('token-status-display');
+  if(!el)return;
+  const t=getGHToken();
+  if(t){el.textContent='✅ 設定済み（末尾4桁: '+t.slice(-4)+'）';el.style.color='#27ae60';}
+  else{el.textContent='⚠️ 未設定 — トークンを設定するとGitHubへ自動保存されます';el.style.color='#c87d20';}
+  const sc=document.getElementById('settings-count');
+  if(sc)sc.textContent=supporters.length;
+}
 const INIT_SUPPORTERS = [
   {id:'1000000000001',name:'大友勤之',area:'王子保地区',tel:'080-9899-2659',relation:'知人',level:'協力者',note:'',email:'',age:'',gender:'',addr:'',created:'2025-05-11T00:00:00.000Z'},
   {id:'1000000000002',name:'土持',area:'その他',tel:'080-3971-9995',relation:'紹介',level:'協力者',note:'',email:'',age:'',gender:'',addr:'',created:'2025-05-11T00:00:00.000Z'},
@@ -545,17 +631,72 @@ function loadData(){
   const sc=localStorage.getItem('wk_schedules');
   supporters=s?JSON.parse(s):JSON.parse(JSON.stringify(INIT_SUPPORTERS));
   schedules=sc?JSON.parse(sc):[];
-  if(!s) saveData();
+  if(!s) localStorage.setItem('wk_supporters',JSON.stringify(supporters));
+  syncFromGitHub(); // バックグラウンドでGitHubと同期
 }
 function saveData(){
   localStorage.setItem('wk_supporters',JSON.stringify(supporters));
   localStorage.setItem('wk_schedules',JSON.stringify(schedules));
   const el=document.getElementById('topbar-count');
   if(el) el.textContent=supporters.length;
+  scheduleSyncToGitHub();
 }
-function saveDataAndToast(msg){
-  saveData();
-  showToast(msg||'✓ 保存しました');
+function saveDataAndToast(msg){saveData();showToast(msg||'✓ 保存しました');}
+
+/* ── GitHub 同期 ── */
+function setSyncStatus(st){
+  const el=document.getElementById('sync-status');
+  if(!el)return;
+  const map={syncing:'⏳ 同期中…',synced:'✅ GitHub保存済',error:'⚠️ 同期失敗（ローカル保存済）',offline:'📴 オフライン'};
+  el.textContent=map[st]||st;
+  el.style.color=st==='synced'?'#27ae60':st==='syncing'?'#e67e22':'#c0392b';
+}
+
+async function syncFromGitHub(manual=false){
+  if(manual)setSyncStatus('syncing');
+  try{
+    const r=await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${GH_FILE}?t=${Date.now()}`);
+    if(!r.ok){if(manual)setSyncStatus('offline');return;}
+    const data=await r.json();
+    const remote=data.supporters||[];
+    const localIds=new Set(supporters.map(s=>s.id));
+    const newItems=remote.filter(s=>!localIds.has(s.id));
+    if(newItems.length>0){
+      supporters=[...newItems,...supporters];
+      localStorage.setItem('wk_supporters',JSON.stringify(supporters));
+      const tc=document.getElementById('topbar-count');
+      if(tc)tc.textContent=supporters.length;
+      if(currentMode==='admin'){renderSupporters();renderDashboard();}
+      if(currentMode==='general'){renderGeneralHome();}
+      if(manual)showToast('✓ '+newItems.length+'名の新規データを取得しました');
+    }else if(manual){showToast('✓ 最新状態です（'+supporters.length+'名）');}
+    setSyncStatus('synced');
+  }catch(e){setSyncStatus(manual?'offline':'offline');}
+}
+
+function scheduleSyncToGitHub(){
+  if(syncDebounce)clearTimeout(syncDebounce);
+  syncDebounce=setTimeout(pushToGitHub,1800);
+}
+
+async function pushToGitHub(){
+  setSyncStatus('syncing');
+  try{
+    const token=getGHToken();
+    if(!token){setSyncStatus('error');showToast('⚠️ GitHubトークンが未設定です。設定から登録してください。');return;}
+    const h={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`,{headers:h});
+    const fd=await r.json();
+    const sha=fd.sha||ghSha;
+    const payload={version:2,updated:new Date().toISOString(),supporters};
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
+    const pr=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`,{
+      method:'PUT',headers:{...h,'Content-Type':'application/json'},
+      body:JSON.stringify({message:`Update supporters (${supporters.length}名)`,content,sha})
+    });
+    if(pr.ok){const pj=await pr.json();ghSha=pj.content?.sha||sha;setSyncStatus('synced');}
+    else{setSyncStatus('error');}
+  }catch(e){setSyncStatus('error');}
 }
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -731,7 +872,7 @@ function generalRegister(){
 }
 
 /* ── ADMIN ── */
-function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();}
+function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理',settings:'設定'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();if(name==='settings')updateTokenStatusDisplay();}
 function renderDashboard(){const now=new Date();const tm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');document.getElementById('stat-total').textContent=supporters.length;document.getElementById('stat-ojibo').textContent=supporters.filter(s=>s.area==='王子保地区').length;document.getElementById('stat-schedule').textContent=schedules.length;document.getElementById('stat-new').textContent=supporters.filter(s=>s.created&&s.created.startsWith(tm)).length;const tbody=document.getElementById('recent-supporters');tbody.innerHTML='';supporters.slice(0,8).forEach(s=>{const d=s.created?new Date(s.created):null;const ds=d?`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`:'-';tbody.innerHTML+=`<tr><td style="font-weight:700;">${escHtml(s.name)}</td><td>${areaTag(s.area)}</td><td>${escHtml(s.relation||'')}</td><td>${levelBadge(s.level)}</td><td style="font-size:12px;color:#888;">${ds}</td></tr>`;});if(!supporters.length)tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:#aaa;">支援者がいません</td></tr>';}
 function renderSupporters(){const q=(document.getElementById('search-input')?.value||'').toLowerCase();const filtered=supporters.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.area||'').toLowerCase().includes(q));const tbody=document.getElementById('supporters-tbody');tbody.innerHTML='';if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa;">該当なし</td></tr>';return;}filtered.forEach(s=>{tbody.innerHTML+=`<tr style="cursor:pointer;" onclick="openDetailModal('${s.id}')"><td style="font-weight:700;">${escHtml(s.name)}</td><td>${areaTag(s.area)}</td><td style="font-size:12px;">${escHtml(s.tel||'-')}</td><td style="font-size:12px;color:#555;">${escHtml(s.addr||'-')}</td><td>${escHtml(s.relation||'')}</td><td>${levelBadge(s.level)}</td><td onclick="event.stopPropagation()"><button class="btn btn-edit" onclick="openEditModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="openDeleteModal('${s.id}')" style="margin-left:4px;">削除</button></td></tr>`;});}
 function areaTag(a){return a==='王子保地区'?`<span class="badge badge-a">${a}</span>`:`<span style="font-size:12px;color:#666;">${escHtml(a||'')}</span>`;}
@@ -755,6 +896,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 loadData();
+updateTokenStatusDisplay();
 const savedMode=sessionStorage.getItem('wk_mode');
 if(savedMode==='admin')enterAdmin();
 else if(savedMode==='general')enterGeneral();
