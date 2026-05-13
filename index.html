@@ -257,7 +257,7 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
   </div>
   <div class="lock-right">
     <div class="lock-right-title">若宮こういち 後援会</div>
-    <div class="lock-right-sub">越前市議会議員選挙</div>
+    <div class="lock-right-sub">後援会活動管理システム</div>
     <div class="lock-divider"></div>
     <div class="lock-buttons" id="lock-mode-select">
       <button class="lock-btn-general" onclick="loginGeneral()">支援者・一般の方はこちら<small>登録・活動確認・政策紹介</small></button>
@@ -362,8 +362,11 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
       <div id="page-supporters" class="page">
         <div class="excel-bar">
           <div class="excel-bar-info">💾 データはブラウザに自動保存されます</div>
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-excel" onclick="exportCSV()">📊 Excelに書き出す</button>
+            <button class="btn" style="background:#5b8dd9;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;" onclick="exportJSON()">💾 JSONバックアップ</button>
+            <button class="btn" style="background:#fff;color:#5b8dd9;border:2px solid #5b8dd9;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;" onclick="document.getElementById('json-import-input').click()">📂 JSONから復元</button>
+            <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="importJSON(event)">
             <button class="btn btn-primary" onclick="openAddModal()">＋ 支援者追加</button>
           </div>
         </div>
@@ -464,6 +467,46 @@ function exportCSV(){
   a.href=url; a.download='若宮浩一_支援者名簿_'+new Date().toLocaleDateString('ja-JP').replace(/\//g,'')+'.csv';
   a.click(); URL.revokeObjectURL(url);
   showToast('✓ Excelファイルを書き出しました');
+}
+
+/* ── JSON バックアップ / 復元 ── */
+function exportJSON(){
+  const data={version:1,exported:new Date().toISOString(),supporters:supporters,schedules:schedules};
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='若宮後援会_バックアップ_'+new Date().toLocaleDateString('ja-JP').replace(/\//g,'')+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ JSONバックアップを保存しました');
+}
+function importJSON(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.supporters||!Array.isArray(data.supporters)){
+        alert('形式が正しくありません。このツールで作成したJSONファイルを選択してください。');
+        return;
+      }
+      const count=data.supporters.length;
+      if(!confirm('JSONファイルから '+count+' 名のデータを読み込みます。現在のデータは上書きされます。よろしいですか？'))return;
+      supporters=data.supporters;
+      schedules=data.schedules||schedules;
+      saveData();
+      renderSupporters();
+      renderDashboard();
+      showToast('✓ '+count+' 名のデータを読み込みました');
+    }catch(err){
+      alert('読み込みに失敗しました: '+err.message);
+    }
+  };
+  reader.readAsText(file,'utf-8');
+  event.target.value='';
 }
 
 /* ── LOGIN ── */
