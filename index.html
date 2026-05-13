@@ -289,7 +289,7 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
     <div class="g-tab active" onclick="gShowTab('home',this)">🏠 ホーム</div>
     <div class="g-tab" onclick="gShowTab('register',this)">📝 支援者登録</div>
     <div class="g-tab" onclick="gShowTab('activity',this)">📅 活動記録</div>
-    <div class="g-tab" onclick="gShowTab('policy',this)">📋 政策の想い</div>
+    <div class="g-tab" onclick="gShowTab('policy',this)">🏹 ビジョン・想い</div>
     <div class="g-tab" style="margin-left:auto;" onclick="logoutToLock()">← 戻る</div>
   </div>
   <div class="g-content">
@@ -322,14 +322,96 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
       <div class="section-title" style="font-size:14px;margin-bottom:12px;">📋 予定一覧</div>
       <div id="g-activity-list"></div>
     </div>
-    <div id="g-tab-policy" class="g-page">
-      <div style="margin-bottom:28px;">
-        <div style="font-family:'Noto Serif JP',serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:8px;">越前市をピッカピカに</div>
-        <div style="font-size:13px;color:var(--gray);line-height:1.8;">若宮こういちの政策の柱をご紹介します。地域の皆さんの声を大切に、越前市の未来を共に作っていきます。</div>
+    <div id="g-tab-policy" class="g-page" style="padding-bottom:40px;">
+
+      <!-- ── キャッチコピー ── -->
+      <div style="background:linear-gradient(135deg,#1a2e30 0%,#006670 100%);border-radius:10px;padding:32px 28px;margin-bottom:32px;text-align:center;">
+        <div style="font-size:11px;letter-spacing:.35em;color:var(--asagi);margin-bottom:10px;">VISION</div>
+        <div style="font-family:'Noto Serif JP',serif;font-size:26px;font-weight:900;color:#fff;line-height:1.5;margin-bottom:10px;">「ここが好きだから出る。」</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.8;">越前市を明るく元気に、ピッカピカに！<br>王子保から越前市を変えるために、3本の矢を放ちます。</div>
       </div>
-      <div class="policy-pillar"><div class="policy-num">POLICY 01</div><div class="policy-title">居場所づくり</div><div class="policy-desc">子どもから高齢者まで、誰もが安心して過ごせる居場所を地域に増やします。コミュニティスペースの充実、子育て支援の強化、高齢者の孤立防止に取り組みます。</div></div>
-      <div class="policy-pillar"><div class="policy-num">POLICY 02</div><div class="policy-title">自然×遊び×教育</div><div class="policy-desc">越前市の豊かな自然を活かした体験型教育・遊びの場を創ります。子どもたちが自然の中で学び、遊び、成長できる環境づくりを推進。</div></div>
-      <div class="policy-pillar"><div class="policy-num">POLICY 03</div><div class="policy-title">商業の復活</div><div class="policy-desc">地元商店街や農業・産業の活性化に取り組みます。若者が働きたいと思える地域産業の育成、地産地消の推進で越前市の経済を元気にします。</div></div>
+
+      <!-- ── プロフィール ── -->
+      <div style="background:#fff;border:1px solid #dde8e8;border-radius:8px;padding:24px 24px;margin-bottom:28px;">
+        <div style="font-size:10px;letter-spacing:.25em;color:var(--asagi);margin-bottom:14px;">PROFILE</div>
+        <div style="font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;color:var(--ink);margin-bottom:16px;">若宮 こういち</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:13px;margin-bottom:20px;">
+          <div><span style="color:#888;margin-right:8px;">出身</span>王子保・今宿町（生まれも育ちも）</div>
+          <div><span style="color:#888;margin-right:8px;">年齢</span>62歳</div>
+          <div><span style="color:#888;margin-right:8px;">家業</span>新聞販売店・ケーブルTV勤務</div>
+          <div><span style="color:#888;margin-right:8px;">活動歴</span>PTA・スポ少・自治振興会・公民館など20数年</div>
+        </div>
+        <div style="background:#f0f8f8;border-left:3px solid var(--asagi);padding:14px 18px;border-radius:0 6px 6px 0;font-size:13px;line-height:1.85;color:#333;margin-bottom:14px;">
+          「私のカラダは王子保でできている」——その恩返しのつもりで、幼稚園後援会長・PTA・スポ少・自治振興会・公民館と、20数年間、地域活動を続けてきました。
+        </div>
+        <p style="font-size:13px;color:#444;line-height:1.85;margin-bottom:10px;">生まれも育ちも王子保・今宿町。祖父母がこの地で商売を始め、その孫として62年をここで生きてきました。新聞販売店を営む家に育ち、地域の皆さんのおかげでご飯を食べさせてもらいました。</p>
+        <p style="font-size:13px;color:#444;line-height:1.85;margin-bottom:10px;">しかし活動を重ねるほど、王子保の活気がなくなっていることを強く感じていました。孫のオムツを替えながら「この子たちが大きくなるころ、ここはどうなっているんだろう」と不安になりました。</p>
+        <p style="font-size:13px;color:#444;line-height:1.85;margin-bottom:10px;">高校生と高齢者が真剣に政治を語る光景に感動し、確信しました——<strong>「政治を自分ごとにすれば、町は盛り上がる」</strong></p>
+        <div style="font-family:'Noto Serif JP',serif;font-size:15px;font-weight:900;color:var(--asagi);margin-top:8px;">人生二周目は、すべてをこの王子保に捧げます。</div>
+      </div>
+
+      <!-- ── 3本の矢 ── -->
+      <div style="font-size:10px;letter-spacing:.25em;color:var(--asagi);margin-bottom:14px;">3本の矢</div>
+
+      <div style="background:#fff;border:1px solid #dde8e8;border-radius:8px;padding:22px 24px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:22px;">🏹</span>
+          <div><div style="font-size:10px;letter-spacing:.15em;color:var(--asagi);">POLICY 01</div>
+          <div style="font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;color:var(--ink);">三世代が集う 居場所づくり</div></div>
+        </div>
+        <div style="font-size:12px;color:#888;margin-bottom:8px;">子ども · 高齢者 · 若者が一体に</div>
+        <p style="font-size:13px;color:#444;line-height:1.85;margin-bottom:8px;">子ども食堂・高齢者の健康促進・若者のワークスペースを一体化した複合施設の創出。世代を超えた交流が日常的に生まれる「みんなの居場所」をつくります。</p>
+        <p style="font-size:13px;color:#444;line-height:1.85;">コミュニティ食堂、高齢者の健康づくり、若者のワークスペースが一体となった拠点を整備します。世代を超えて自然に顔を合わせ、互いの存在を肯定し合える「居場所」を各地区に配置し、福祉や安全の拠点とします。</p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">子ども食堂</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">高齢者健康</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">若者ワーク</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">ボランティアポイント</span>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #dde8e8;border-radius:8px;padding:22px 24px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:22px;">🏹</span>
+          <div><div style="font-size:10px;letter-spacing:.15em;color:var(--asagi);">POLICY 02</div>
+          <div style="font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;color:var(--ink);">自然と融合した 遊びと教育の創出</div></div>
+        </div>
+        <div style="font-size:12px;color:#888;margin-bottom:8px;">ふるさとの良さを体で知る</div>
+        <p style="font-size:13px;color:#444;line-height:1.85;margin-bottom:8px;">白崎公園や山々を活かした「ふるさとサバイバル」など体験型アウトドアの推進。子どもたちが一から問いを立てて遊ぶ探究学習を地域公園で実施します。</p>
+        <p style="font-size:13px;color:#444;line-height:1.85;">地域の自然や文化伝統をフィールドに、子どもたちが自ら問いを立てて解決する「探求塾」を公的に支援します。地域のプロやシニアが講師やメンターとして参画し、知的好奇心や自尊心を育みます。</p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">探求塾</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">ふるさとサバイバル</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">デジタルリテラシー</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">体験型学習</span>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #dde8e8;border-radius:8px;padding:22px 24px;margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:22px;">🏹</span>
+          <div><div style="font-size:10px;letter-spacing:.15em;color:var(--asagi);">POLICY 03</div>
+          <div style="font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;color:var(--ink);">教育から始める 商業の復活</div></div>
+        </div>
+        <div style="font-size:12px;color:#888;margin-bottom:8px;">未来の担い手を今から育てる</div>
+        <p style="font-size:13px;color:#444;line-height:1.85;margin-bottom:8px;">子ども・中高生に「一日店長」などの商い体験教育を実施。地元商業者と子どもたちの交流を深め、将来の起業家・後継者を育て王子保の商業を根本から再生します。</p>
+        <p style="font-size:13px;color:#444;line-height:1.85;">地域のお店・産業をデジタルで見える化し、越前市創生2.0の核となる地域経済の循環を生み出します。「お得感」×「地域商業」の掛け合わせで、まちに活気を取り戻します。</p>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">一日店長</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">商い体験</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">起業家育成</span>
+          <span style="font-size:11px;background:rgba(0,163,175,.1);color:var(--asagi);padding:3px 10px;border-radius:20px;">地域商業デジタル化</span>
+        </div>
+      </div>
+
+      <!-- ── SNS ── -->
+      <div style="background:#fff;border:1px solid #dde8e8;border-radius:8px;padding:20px 24px;text-align:center;">
+        <div style="font-size:12px;color:#888;margin-bottom:8px;">公式Instagram</div>
+        <div style="font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;color:var(--ink);margin-bottom:6px;">@wakamiya.kouiti</div>
+        <div style="font-size:12px;color:#666;margin-bottom:14px;">日々の活動・地域の情報・若宮こういちの素顔を発信しています。</div>
+        <a href="https://www.instagram.com/wakamiya.kouiti/" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border:none;border-radius:6px;padding:10px 24px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.05em;">Instagramを見る →</a>
+      </div>
+
     </div>
   </div>
 </div>
