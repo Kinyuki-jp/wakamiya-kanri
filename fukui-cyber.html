@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>福井サイバー化プロジェクト ～スマホから始めるツーリズム～</title>
+  <style>
+    :root {
+      --neon-blue: #00d4ff;
+      --neon-purple: #b44fff;
+      --neon-green: #00ff88;
+      --dark-bg: #040812;
+      --dark-card: #0a1628;
+      --dark-border: #1a2a4a;
+      --text-primary: #e8f4ff;
+      --text-muted: #7a9cc0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: url('https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop') center/cover no-repeat;
+      filter: brightness(0.25) saturate(1.5) hue-rotate(180deg);
+      z-index: 0;
+    }
+
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.07) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: grid-move 20s linear infinite;
+      z-index: 1;
+    }
+    @keyframes grid-move { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+
+    .hero-content { position: relative; z-index: 2; max-width: 900px; }
+
+    .hero-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(180,79,255,0.2));
+      border: 1px solid var(--neon-blue);
+      border-radius: 50px;
+      padding: .4rem 1.4rem;
+      font-size: .8rem;
+      letter-spacing: .15em;
+      color: var(--neon-blue);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 6vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 0%, var(--neon-blue) 50%, var(--neon-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      text-shadow: none;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-team {
+      font-size: .85rem;
+      color: var(--neon-green);
+      letter-spacing: .1em;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    .btn {
+      padding: .85rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .25s;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      color: #fff;
+      box-shadow: 0 0 24px rgba(0,212,255,0.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,212,255,0.7); }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--neon-blue);
+      color: var(--neon-blue);
+    }
+    .btn-outline:hover { background: rgba(0,212,255,0.1); transform: translateY(-2px); }
+
+    /* ── SCROLL INDICATOR ── */
+    .scroll-hint {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      z-index: 2; display: flex; flex-direction: column; align-items: center;
+      color: var(--text-muted); font-size: .75rem; gap: .4rem;
+      animation: bounce 2s ease-in-out infinite;
+    }
+    .scroll-hint::after {
+      content: ''; display: block; width: 1px; height: 40px;
+      background: linear-gradient(to bottom, var(--neon-blue), transparent);
+    }
+    @keyframes bounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+
+    /* ── SECTION BASE ── */
+    section { padding: 5rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+
+    .section-label {
+      font-size: .75rem; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--neon-blue); margin-bottom: .5rem;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 900;
+      margin-bottom: 1rem;
+    }
+    .section-desc { color: var(--text-muted); font-size: 1.05rem; line-height: 1.8; max-width: 680px; }
+
+    .divider {
+      width: 100%; height: 1px;
+      background: linear-gradient(to right, transparent, var(--neon-blue), transparent);
+      margin: 0 auto;
+    }
+
+    /* ── ABOUT SABAE ── */
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem;
+    }
+    @media (max-width: 700px) { .about-grid { grid-template-columns: 1fr; } }
+
+    .about-card {
+      border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--dark-border);
+      background: var(--dark-card);
+      transition: transform .3s, box-shadow .3s;
+    }
+    .about-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,212,255,0.15); }
+
+    .about-card img {
+      width: 100%; height: 200px; object-fit: cover;
+      filter: saturate(1.2);
+    }
+    .about-card-body { padding: 1.2rem 1.4rem; }
+    .about-card-body h3 { font-size: 1.15rem; color: var(--neon-blue); margin-bottom: .4rem; }
+    .about-card-body p { font-size: .9rem; color: var(--text-muted); line-height: 1.7; }
+
+    /* ── PROBLEM ── */
+    .problem-section {
+      background: linear-gradient(135deg, rgba(180,79,255,0.05), rgba(0,212,255,0.05));
+      border: 1px solid var(--dark-border);
+      border-radius: 20px;
+      padding: 3rem;
+      margin: 0 auto;
+      max-width: 1100px;
+    }
+    .problem-stats { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 2rem; }
+    .stat-box {
+      flex: 1; min-width: 180px;
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px; padding: 1.5rem; text-align: center;
+    }
+    .stat-number { font-size: 2.2rem; font-weight: 900; color: var(--neon-blue); line-height: 1; }
+    .stat-label { font-size: .8rem; color: var(--text-muted); margin-top: .4rem; }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .feature-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px; padding: 2rem;
+      transition: transform .3s, border-color .3s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+      opacity: 0; transition: opacity .3s;
+    }
+    .feature-card:hover { transform: translateY(-4px); border-color: var(--neon-blue); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .feature-card h3 { font-size: 1.1rem; color: var(--text-primary); margin-bottom: .6rem; }
+    .feature-card p { font-size: .9rem; color: var(--text-muted); line-height: 1.7; }
+
+    /* ── GAME SCENE ── */
+    .game-scene {
+      position: relative; border-radius: 20px; overflow: hidden;
+      margin: 3rem auto 0; max-width: 900px;
+    }
+    .game-scene img {
+      width: 100%; height: 420px; object-fit: cover;
+      filter: saturate(1.3) contrast(1.1);
+    }
+    .game-scene-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(4,8,18,0.9) 0%, transparent 60%);
+    }
+    .game-scene-text {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 2rem;
+    }
+    .game-scene-text h3 { font-size: 1.6rem; margin-bottom: .4rem; }
+    .game-scene-text p { color: var(--text-muted); font-size: .95rem; }
+    .hud-badge {
+      position: absolute; top: 1rem; right: 1rem;
+      background: rgba(0,212,255,0.15);
+      border: 1px solid var(--neon-blue);
+      border-radius: 8px; padding: .4rem .9rem;
+      font-size: .75rem; color: var(--neon-blue);
+      letter-spacing: .1em;
+    }
+
+    /* ── LOCATIONS ── */
+    .locations-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem; margin-top: 3rem;
+    }
+    .location-card {
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--dark-border);
+      position: relative; cursor: pointer;
+      transition: transform .3s;
+    }
+    .location-card:hover { transform: scale(1.03); }
+    .location-card img { width: 100%; height: 160px; object-fit: cover; display: block; }
+    .location-tag {
+      position: absolute; top: .7rem; left: .7rem;
+      background: rgba(0,0,0,0.7); border: 1px solid var(--neon-green);
+      color: var(--neon-green); font-size: .7rem; padding: .25rem .6rem;
+      border-radius: 4px; letter-spacing: .1em;
+    }
+    .location-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(4,8,18,0.95), transparent);
+      padding: 1rem .8rem .6rem; font-size: .9rem; font-weight: 700;
+    }
+
+    /* ── CHARACTERS ── */
+    .characters-section { text-align: center; }
+    .char-list {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem; margin-top: 3rem;
+    }
+    .char-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px; padding: 1.2rem .8rem;
+      transition: border-color .3s, transform .3s;
+    }
+    .char-card:hover { border-color: var(--neon-purple); transform: translateY(-3px); }
+    .char-avatar { font-size: 2rem; margin-bottom: .6rem; }
+    .char-name { font-size: .85rem; font-weight: 700; color: var(--text-primary); }
+    .char-era { font-size: .72rem; color: var(--neon-purple); margin-top: .2rem; }
+
+    /* ── BUSINESS MODEL ── */
+    .biz-flow {
+      display: flex; align-items: center; justify-content: center;
+      flex-wrap: wrap; gap: 1rem; margin-top: 3rem;
+    }
+    .biz-box {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px; padding: 1.2rem 1.6rem;
+      text-align: center; min-width: 140px;
+    }
+    .biz-box span { display: block; font-size: 1.5rem; margin-bottom: .4rem; }
+    .biz-box strong { font-size: .9rem; color: var(--neon-blue); }
+    .biz-box p { font-size: .75rem; color: var(--text-muted); margin-top: .2rem; }
+    .biz-arrow { font-size: 1.5rem; color: var(--neon-blue); }
+
+    /* ── SDGs ── */
+    .sdg-row { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; justify-content: center; }
+    .sdg-chip {
+      padding: .5rem 1.2rem; border-radius: 50px;
+      font-size: .85rem; font-weight: 700;
+    }
+
+    /* ── COST ── */
+    .cost-table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+    .cost-table th, .cost-table td {
+      padding: .9rem 1.2rem; text-align: left;
+      border-bottom: 1px solid var(--dark-border);
+      font-size: .9rem;
+    }
+    .cost-table th { color: var(--neon-blue); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+    .cost-table td:last-child { color: var(--neon-green); text-align: right; font-weight: 700; }
+    .cost-total td { color: var(--text-primary) !important; font-size: 1.1rem !important; font-weight: 900; }
+
+    /* ── ROADMAP ── */
+    .roadmap { display: flex; flex-direction: column; gap: 0; margin-top: 3rem; position: relative; }
+    .roadmap::before {
+      content: ''; position: absolute; left: 24px; top: 0; bottom: 0; width: 2px;
+      background: linear-gradient(to bottom, var(--neon-blue), var(--neon-purple));
+    }
+    .roadmap-item { display: flex; gap: 1.5rem; padding-left: 60px; position: relative; padding-bottom: 2.5rem; }
+    .roadmap-dot {
+      position: absolute; left: 16px; top: 4px; width: 16px; height: 16px;
+      border-radius: 50%; border: 2px solid var(--neon-blue); background: var(--dark-bg);
+      box-shadow: 0 0 8px var(--neon-blue);
+    }
+    .roadmap-content { flex: 1; }
+    .roadmap-phase { font-size: .72rem; color: var(--neon-blue); letter-spacing: .15em; text-transform: uppercase; }
+    .roadmap-title { font-size: 1rem; font-weight: 700; margin: .25rem 0; }
+    .roadmap-desc { font-size: .85rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── CTA ── */
+    .cta-section {
+      text-align: center;
+      background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(180,79,255,0.08));
+      border: 1px solid var(--dark-border); border-radius: 24px;
+      padding: 4rem 2rem; margin: 0 auto 4rem;
+    }
+    .cta-section h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin-bottom: 1rem; }
+    .cta-section p { color: var(--text-muted); margin-bottom: 2rem; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(4,8,18,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--dark-border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem;
+    }
+    .nav-logo { font-weight: 900; font-size: 1rem; color: var(--neon-blue); letter-spacing: .05em; }
+    .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: .85rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--neon-blue); }
+    @media (max-width: 600px) { .nav-links { display: none; } }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center; padding: 2rem 1rem;
+      color: var(--text-muted); font-size: .8rem;
+      border-top: 1px solid var(--dark-border);
+    }
+
+    /* ── PULSE ANIM ── */
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+
+    /* ── HYPOTHESIS BOX ── */
+    .hypothesis-box {
+      background: linear-gradient(135deg, rgba(180,79,255,0.1), rgba(0,212,255,0.05));
+      border-left: 4px solid var(--neon-purple);
+      border-radius: 0 12px 12px 0;
+      padding: 1.5rem 2rem; margin: 2rem 0;
+    }
+    .hypothesis-box h3 { color: var(--neon-purple); margin-bottom: .6rem; }
+    .hypothesis-box p { color: var(--text-muted); line-height: 1.7; }
+
+    /* ── THREE-WAY ── */
+    .sankho { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 2rem; }
+    .sankho-item {
+      flex: 1; min-width: 200px;
+      background: var(--dark-card); border: 1px solid var(--dark-border);
+      border-radius: 16px; padding: 2rem; text-align: center;
+    }
+    .sankho-item h3 { font-size: 1.1rem; color: var(--neon-green); margin-bottom: .6rem; }
+    .sankho-item p { font-size: .85rem; color: var(--text-muted); line-height: 1.6; }
+    .sankho-item .big-icon { font-size: 3rem; margin-bottom: .6rem; }
+
+    /* ── IMAGE FULL WIDTH SECTION ── */
+    .wide-image-section {
+      width: 100%; max-width: none;
+      position: relative; overflow: hidden; height: 320px;
+      margin: 0;
+    }
+    .wide-image-section img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(0.4) saturate(1.4);
+    }
+    .wide-image-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: .8rem;
+    }
+    .wide-image-overlay h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .wide-image-overlay p { color: var(--text-muted); font-size: 1.05rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">⚡ 福井CYBER</div>
+  <ul class="nav-links">
+    <li><a href="#about">鯖江・福井</a></li>
+    <li><a href="#game">ゲーム概要</a></li>
+    <li><a href="#locations">舞台</a></li>
+    <li><a href="#characters">武将</a></li>
+    <li><a href="#business">ビジネス</a></li>
+    <li><a href="#roadmap">ロードマップ</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero" style="padding-top: 80px;">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🇯🇵 鯖江高校 2年生プロジェクト</div>
+    <h1>福井サイバー化<br>プロジェクト</h1>
+    <p class="hero-sub">～ スマホから始めるツーリズム ～<br>メタバース×地域活性×教育</p>
+    <p class="hero-team">大友勤之 ／ 小木陽玖 ／ 熊野健太</p>
+    <div class="hero-buttons">
+      <a href="#game" class="btn btn-primary">ゲーム概要を見る</a>
+      <a href="#about" class="btn btn-outline">鯖江・福井について</a>
+    </div>
+  </div>
+  <div class="scroll-hint">SCROLL</div>
+</div>
+
+<!-- WIDE IMAGE: Fukui -->
+<div class="wide-image-section">
+  <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1600&auto=format&fit=crop" alt="福井の自然">
+  <div class="wide-image-overlay">
+    <h2>ここは福井県・鯖江市</h2>
+    <p>眼鏡の聖地・漆器・豊かな自然… 知られざる宝が眠るまち</p>
+  </div>
+</div>
+
+<!-- ABOUT SABAE -->
+<section id="about">
+  <p class="section-label">About</p>
+  <h2 class="section-title">鯖江市・福井県について</h2>
+  <p class="section-desc">
+    鯖江市（人口68,284人・面積53.16km²）は眼鏡フレームの国内生産の約96%を担う"ものづくりのまち"。
+    しかし人口減少と観光客の少なさが課題となっています。
+  </p>
+  <div class="about-grid">
+    <div class="about-card">
+      <img src="https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=800&auto=format&fit=crop" alt="眼鏡">
+      <div class="about-card-body">
+        <h3>👓 眼鏡のまち・鯖江</h3>
+        <p>国産メガネフレームの約96%を生産。めがねミュージアムなど近未来的なサイバー施設も充実。</p>
+      </div>
+    </div>
+    <div class="about-card">
+      <img src="https://images.unsplash.com/photo-1522383225653-ed111181a951?w=800&auto=format&fit=crop" alt="西山公園の桜">
+      <div class="about-card-body">
+        <h3>🌸 西山公園・きらめきロード</h3>
+        <p>広大な西山公園の桜やつつじ、きらめきロードの雄大な自然。地域住民に愛される公共空間。</p>
+      </div>
+    </div>
+    <div class="about-card">
+      <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&auto=format&fit=crop" alt="歴史的寺院">
+      <div class="about-card-body">
+        <h3>⛩️ 歴史的遺産</h3>
+        <p>王山古墳・お寺など歴史的価値の高い史跡が点在。継体天皇・朝倉義景など有名武将ゆかりの地。</p>
+      </div>
+    </div>
+    <div class="about-card">
+      <img src="https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=800&auto=format&fit=crop" alt="都市の夜景">
+      <div class="about-card-body">
+        <h3>🚂 アクセスの課題</h3>
+        <p>JR新宿駅 在来線：1時間26本以上 vs JR福井駅：1時間1〜3本。首都圏からのアクセスが障壁。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="problem-stats" style="margin-top: 3rem;">
+    <div class="stat-box">
+      <div class="stat-number">68,284</div>
+      <div class="stat-label">鯖江市の人口（減少傾向）</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">46位</div>
+      <div class="stat-label">訪日外国人観光客数（全国順位）</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">96%</div>
+      <div class="stat-label">国産メガネフレーム生産シェア</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">1〜3本</div>
+      <div class="stat-label">JR福井駅の在来線（1時間あたり）</div>
+    </div>
+  </div>
+
+  <div class="hypothesis-box">
+    <h3>💡 仮説</h3>
+    <p>
+      鯖江市・福井県は交通の便が悪いため、<br>
+      魅力が上手に伝えられていないから<br>
+      観光客が来ずに賑わっていないのでは？
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- GAME OVERVIEW -->
+<section id="game">
+  <p class="section-label">Game Concept</p>
+  <h2 class="section-title">アプリ・ゲーム概要</h2>
+  <p class="section-desc">
+    鯖江市・福井県を舞台としたメタバースゲームアプリを作成し、全国のユーザーに鯖江・福井の魅力を伝える。<br>
+    実際に訪れたいと思わせる体験型プラットフォーム。
+  </p>
+
+  <div class="game-scene">
+    <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop" alt="ゲームイメージ">
+    <div class="game-scene-overlay"></div>
+    <div class="game-scene-text">
+      <h3>⚔️ 心理戦×バトルフィールド</h3>
+      <p>プレイヤーとハンターの2役職が鯖江の街を舞台に激突。タスクをこなして勝利を目指せ。</p>
+    </div>
+    <div class="hud-badge pulse">METAVERSE GAME</div>
+  </div>
+
+  <div class="features-grid" style="margin-top: 3rem;">
+    <div class="feature-card">
+      <div class="feature-icon">🗺️</div>
+      <h3>リアル舞台のメタバース</h3>
+      <p>鯖江市・福井県の実在する場所がバトルフィールドに。プレイするほど土地勘が身につく。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <h3>教育×ゲーム</h3>
+      <p>五教科クイズ＋鯖江クイズをゲームに組み込み。GIGAスクール構想を体現した学習体験。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚔️</div>
+      <h3>PvP心理戦</h3>
+      <p>対戦色が強く、RPGより幅広いユーザーを巻き込める。コロッセオへ転送されてのPvP決戦。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏪</div>
+      <h3>企業連携</h3>
+      <p>ロビーで地元企業の商品を購入可能。ゲーム内アイテムで企業商品を宣伝→購買力増加。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎮</div>
+      <h3>完全無料プレイ</h3>
+      <p>ゲーム課金ゼロ。親御さんも安心の健全ゲーム。教育特化で子供も大人も楽しめる。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏆</div>
+      <h3>リアルイベント連動</h3>
+      <p>大型連休に鯖江市内でゲーム関連イベントを開催。来場者には限定スキンを配布。</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- LOCATIONS -->
+<section id="locations">
+  <p class="section-label">Battle Fields</p>
+  <h2 class="section-title">バトルフィールド＆コロッセオ</h2>
+  <p class="section-desc">実在する鯖江市の名所がゲームの舞台に。プレイするたびに土地勘が深まります。</p>
+
+  <div class="locations-grid">
+    <div class="location-card">
+      <img src="https://images.unsplash.com/photo-1559559079-e5b97c7b5f2e?w=600&auto=format&fit=crop" alt="公園">
+      <div class="location-tag">FIELD 01</div>
+      <div class="location-name">🌳 西山公園</div>
+    </div>
+    <div class="location-card">
+      <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&auto=format&fit=crop" alt="駅">
+      <div class="location-tag">FIELD 02</div>
+      <div class="location-name">🚉 鯖江駅周辺</div>
+    </div>
+    <div class="location-card">
+      <img src="https://images.unsplash.com/photo-1567684014761-b65e2e59b9eb?w=600&auto=format&fit=crop" alt="商店街">
+      <div class="location-tag">FIELD 03</div>
+      <div class="location-name">🏪 商店街・市街地</div>
+    </div>
+    <div class="location-card">
+      <img src="https://images.unsplash.com/photo-1480688041655-30bf8134a5e3?w=600&auto=format&fit=crop" alt="古墳">
+      <div class="location-tag">COLOSSEUM</div>
+      <div class="location-name">⚔️ 王山古墳（コロッセオ）</div>
+    </div>
+    <div class="location-card">
+      <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop" alt="市役所">
+      <div class="location-tag">SPECIAL</div>
+      <div class="location-name">🏛️ 鯖江市役所</div>
+    </div>
+    <div class="location-card">
+      <img src="https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=600&auto=format&fit=crop" alt="めがねミュージアム">
+      <div class="location-tag">CYBER</div>
+      <div class="location-name">👓 めがねミュージアム</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CHARACTERS -->
+<section id="characters">
+  <div class="characters-section">
+    <p class="section-label">Characters</p>
+    <h2 class="section-title">登場武将一覧</h2>
+    <p class="section-desc" style="margin: 0 auto 1rem;">
+      鯖江・福井ゆかりの歴史的人物がゲームキャラクターとして登場。プレイするほど福井の歴史が身につく。
+    </p>
+    <div class="char-list">
+      <div class="char-card"><div class="char-avatar">👑</div><div class="char-name">継体天皇</div><div class="char-era">越前ゆかり</div></div>
+      <div class="char-card"><div class="char-avatar">🎭</div><div class="char-name">近松門左衛門</div><div class="char-era">劇作家</div></div>
+      <div class="char-card"><div class="char-avatar">⚔️</div><div class="char-name">朝倉義景</div><div class="char-era">戦国武将</div></div>
+      <div class="char-card"><div class="char-avatar">🌸</div><div class="char-name">お市の方</div><div class="char-era">戦国姫将</div></div>
+      <div class="char-card"><div class="char-avatar">📜</div><div class="char-name">杉田玄白</div><div class="char-era">蘭学者</div></div>
+      <div class="char-card"><div class="char-avatar">🏯</div><div class="char-name">松平春嶽</div><div class="char-era">幕末藩主</div></div>
+      <div class="char-card"><div class="char-avatar">🗡️</div><div class="char-name">間部詮勝</div><div class="char-era">大老</div></div>
+      <div class="char-card"><div class="char-avatar">⚔️</div><div class="char-name">大谷義嗣</div><div class="char-era">戦国武将</div></div>
+      <div class="char-card"><div class="char-avatar">📚</div><div class="char-name">横井湘南</div><div class="char-era">思想家</div></div>
+      <div class="char-card"><div class="char-avatar">🏯</div><div class="char-name">松平忠直</div><div class="char-era">越前藩主</div></div>
+      <div class="char-card"><div class="char-avatar">🎓</div><div class="char-name">矢代操</div><div class="char-era">教育者</div></div>
+      <div class="char-card"><div class="char-avatar">🌊</div><div class="char-name">波多野景之</div><div class="char-era">武将</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WIDE IMAGE: Gaming -->
+<div class="wide-image-section">
+  <img src="https://images.unsplash.com/photo-1592478411213-6153e4ebc07d?w=1600&auto=format&fit=crop" alt="VR Gaming">
+  <div class="wide-image-overlay">
+    <h2>メタバースで鯖江へ</h2>
+    <p>どこにいてもスマホ1つで鯖江・福井を体験できる</p>
+  </div>
+</div>
+
+<!-- BUSINESS MODEL -->
+<section id="business">
+  <p class="section-label">Business Model</p>
+  <h2 class="section-title">ビジネスモデル・三方よし</h2>
+  <p class="section-desc">ユーザー・企業・地域がすべて得をする仕組みを構築します。</p>
+
+  <div class="biz-flow">
+    <div class="biz-box"><span>🎮</span><strong>ユーザー</strong><p>無料で鯖江を体験、商品も購入可</p></div>
+    <div class="biz-arrow">⇄</div>
+    <div class="biz-box"><span>🏢</span><strong>地元企業</strong><p>新顧客へリーチ、売上増加</p></div>
+    <div class="biz-arrow">⇄</div>
+    <div class="biz-box"><span>🏙️</span><strong>地域・鯖江市</strong><p>観光客増加・経済活性化</p></div>
+  </div>
+
+  <div class="sankho">
+    <div class="sankho-item">
+      <div class="big-icon">😄</div>
+      <h3>プレイヤー目線</h3>
+      <p>無料でゲームができ、勉強になる。実際に行ってみたくなる体験。</p>
+    </div>
+    <div class="sankho-item">
+      <div class="big-icon">🏪</div>
+      <h3>企業目線</h3>
+      <p>今まで届かなかった全国の顧客に商品の魅力を届け、購買につなげる。</p>
+    </div>
+    <div class="sankho-item">
+      <div class="big-icon">🌏</div>
+      <h3>地域目線</h3>
+      <p>地域活性化・観光客増加・経済が潤う。SDGs達成にも貢献。</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SDGs -->
+<section>
+  <p class="section-label">SDGs</p>
+  <h2 class="section-title">SDGsとの関連</h2>
+  <div class="sdg-row">
+    <span class="sdg-chip" style="background:rgba(255,100,0,0.2);border:1px solid #ff6400;color:#ff9955;">🍎 4. 質の高い教育</span>
+    <span class="sdg-chip" style="background:rgba(0,200,100,0.2);border:1px solid #00c864;color:#55ff99;">💼 8. 働きがい・経済成長</span>
+    <span class="sdg-chip" style="background:rgba(255,200,0,0.2);border:1px solid #ffc800;color:#ffdd55;">🏙️ 11. 住み続けられるまちづくり</span>
+    <span class="sdg-chip" style="background:rgba(0,150,255,0.2);border:1px solid #0096ff;color:#55bbff;">🤝 17. パートナーシップ</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- COST -->
+<section>
+  <p class="section-label">Budget</p>
+  <h2 class="section-title">費用概要</h2>
+  <table class="cost-table">
+    <thead>
+      <tr><th>項目</th><th>詳細</th><th>金額</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>🎵 音楽制作</td><td>自治体・高専と協力</td><td>0円</td></tr>
+      <tr><td>💻 ソフト作成</td><td>自作（学生チーム）</td><td>0円</td></tr>
+      <tr><td>🖥️ サーバー料</td><td>毎月ランニングコスト</td><td>2〜30万円/月</td></tr>
+      <tr><td>🎨 イラスト料</td><td>立ち絵・背景・イベント絵</td><td>0円</td></tr>
+      <tr><td>🖥️ 機材費</td><td>開発端末等</td><td>60万円</td></tr>
+      <tr><td>📚 教材費＋雑費</td><td>学習コスト</td><td>10万円</td></tr>
+      <tr><td>🧱 材料費</td><td>その他</td><td>10万円</td></tr>
+      <tr class="cost-total"><td colspan="2"><strong>概算総額</strong></td><td>80〜110万円</td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--text-muted);font-size:.85rem;margin-top:1rem;">
+    💰 資金調達：クラウドファンディング（1年）/ 地元企業広告料 / 市・県からの援助 / フランチャイズ特許料
+  </p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <p class="section-label">Roadmap</p>
+  <h2 class="section-title">展開ロードマップ</h2>
+
+  <div class="roadmap">
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">Phase 1</div>
+        <div class="roadmap-title">🏗️ チーム結成・開発開始</div>
+        <div class="roadmap-desc">地元学生でアプリ制作チームを結成。市商工会議所・大学教授をアドバイザーに迎えて開発スタート。クラウドファンディングで資金調達。</div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">Phase 2</div>
+        <div class="roadmap-title">🚀 鯖江市でリリース</div>
+        <div class="roadmap-desc">まず鯖江市を舞台にベータリリース。各種自治体施設に端末を設置、学校・地元企業にビラ配布。友達招待でアバターレベルアップシステム導入。</div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">Phase 3</div>
+        <div class="roadmap-title">🌐 福井県全体へ拡大</div>
+        <div class="roadmap-desc">福井県全域へ舞台を拡大。大型連休にリアルイベントを開催し、来場者に限定スキンを配布。ゲーム内クーポン配布で実店舗来訪を促進。</div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">Phase 4</div>
+        <div class="roadmap-title">🏆 北陸・全国へフランチャイズ展開</div>
+        <div class="roadmap-desc">フランチャイズ方式で他の地方都市へ横展開。地域活性・教育振興・経済活性の三位一体モデルを全国へ。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="max-width: 900px;">
+  <div class="cta-section">
+    <h2>一緒に鯖江を、<br>世界に届けよう。</h2>
+    <p>
+      地元学生が地元を変える。<br>
+      スマホの中に鯖江・福井の魅力を詰め込んで、全国へ。
+    </p>
+    <div class="hero-buttons">
+      <a href="#game" class="btn btn-primary">🎮 ゲームを体験する</a>
+      <a href="#about" class="btn btn-outline">📖 もっと詳しく</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>福井サイバー化プロジェクト ／ 鯖江高校2年　大友勤之・小木陽玖・熊野健太</p>
+  <p style="margin-top:.4rem;">～スマホから始めるツーリズム～ | Powered by Students of Sabae</p>
+</footer>
+
+<script>
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+
+  // Intersection Observer for fade-in
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.style.opacity = '1';
+        en.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feature-card, .about-card, .char-card, .location-card, .roadmap-item, .sankho-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity .5s ease, transform .5s ease';
+    obs.observe(el);
+  });
+</script>
+
+</body>
+</html>
