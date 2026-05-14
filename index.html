@@ -727,8 +727,23 @@ async function syncFromGitHub(manual=false){
     if(!r.ok){if(manual)setSyncStatus('offline');return;}
     const data=await r.json();
     const remote=data.supporters||[];
-    // GitHubを唯一の正の情報源として完全置換（編集・削除も反映）
-    supporters=remote;
+    // ── マージ（タイムスタンプ比較で新しい方を採用、ローカルのみのデータも保持） ──
+    const ts=s=>s.updated||s.created||'';
+    const merged=new Map();
+    remote.forEach(s=>merged.set(s.id,s));
+    let localOnlyCount=0;
+    supporters.forEach(s=>{
+      const existing=merged.get(s.id);
+      if(!existing){
+        // ローカルにしかないデータ→保持してGitHubへ後でプッシュ
+        merged.set(s.id,s);
+        localOnlyCount++;
+      }else if(ts(s)>ts(existing)){
+        // ローカルの方が新しい→ローカル優先
+        merged.set(s.id,s);
+      }
+    });
+    supporters=Array.from(merged.values()).sort((a,b)=>ts(b).localeCompare(ts(a)));
     localStorage.setItem('wk_supporters',JSON.stringify(supporters));
     const tc=document.getElementById('topbar-count');
     if(tc)tc.textContent=supporters.length;
@@ -736,19 +751,22 @@ async function syncFromGitHub(manual=false){
     if(currentMode==='general'){renderGeneralHome();}
     if(manual)showToast('✓ 同期しました（'+supporters.length+'名）');
     setSyncStatus('synced');
+    // ローカルだけにあるデータがあれば即GitHubへ反映
+    if(localOnlyCount>0&&getGHToken())pushToGitHub();
   }catch(e){setSyncStatus(manual?'offline':'offline');}
 }
 
 function scheduleSyncToGitHub(){
   if(syncDebounce)clearTimeout(syncDebounce);
-  syncDebounce=setTimeout(pushToGitHub,1800);
+  syncDebounce=setTimeout(()=>pushToGitHub(),600);
 }
 
+let pushRetryCount=0;
 async function pushToGitHub(){
   setSyncStatus('syncing');
   try{
     const token=getGHToken();
-    if(!token){setSyncStatus('error');showToast('⚠️ GitHubトークンが未設定です。設定から登録してください。');return;}
+    if(!token){setSyncStatus('error');localStorage.setItem('wk_pending_push','1');return;}
     const h={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
     const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`,{headers:h});
     const fd=await r.json();
@@ -759,9 +777,29 @@ async function pushToGitHub(){
       method:'PUT',headers:{...h,'Content-Type':'application/json'},
       body:JSON.stringify({message:`Update supporters (${supporters.length}名)`,content,sha})
     });
-    if(pr.ok){const pj=await pr.json();ghSha=pj.content?.sha||sha;setSyncStatus('synced');}
-    else{setSyncStatus('error');}
-  }catch(e){setSyncStatus('error');}
+    if(pr.ok){
+      const pj=await pr.json();ghSha=pj.content?.sha||sha;
+      setSyncStatus('synced');
+      localStorage.removeItem('wk_pending_push');
+      pushRetryCount=0;
+    }else{
+      // 409 (sha競合) → 一度GitHubから最新を取って再試行
+      if(pr.status===409&&pushRetryCount<3){
+        pushRetryCount++;
+        await syncFromGitHub(false);
+        setTimeout(pushToGitHub,1000);
+        return;
+      }
+      setSyncStatus('error');
+      localStorage.setItem('wk_pending_push','1');
+      // 5秒後リトライ
+      if(pushRetryCount<3){pushRetryCount++;setTimeout(pushToGitHub,5000);}
+    }
+  }catch(e){
+    setSyncStatus('error');
+    localStorage.setItem('wk_pending_push','1');
+    if(pushRetryCount<3){pushRetryCount++;setTimeout(pushToGitHub,5000);}
+  }
 }
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -958,7 +996,8 @@ function renderGeneralActivity(){
 function generalRegister(){
   const name=document.getElementById('g-reg-name').value.trim();
   if(!name){alert('お名前を入力してください');return;}
-  supporters.unshift({id:Date.now().toString(),name,area:document.getElementById('g-reg-area').value,tel:document.getElementById('g-reg-tel').value.trim(),relation:'一般登録',level:'支持者',note:document.getElementById('g-reg-note').value.trim(),email:'',age:'',gender:'',addr:'',created:new Date().toISOString()});
+  const now=new Date().toISOString();
+  supporters.unshift({id:Date.now().toString(),name,area:document.getElementById('g-reg-area').value,tel:document.getElementById('g-reg-tel').value.trim(),relation:'一般登録',level:'支持者',note:document.getElementById('g-reg-note').value.trim(),email:'',age:'',gender:'',addr:'',created:now,updated:now});
   saveData();
   document.getElementById('g-reg-name').value='';document.getElementById('g-reg-tel').value='';document.getElementById('g-reg-note').value='';
   renderGeneralHome(); showToast('✓ 登録しました！ありがとうございます');
@@ -973,7 +1012,7 @@ function areaTag(a){return a==='王子保地区'?`<span class="badge badge-a">${
 function levelBadge(l){const m={'協力者':'badge-a','支持者':'badge-b','応援者':'badge-b','中立':'badge-c'};return `<span class="badge ${m[l]||'badge-c'}">${escHtml(l||'')}</span>`;}
 function openAddModal(){document.getElementById('modal-supporter-title').textContent='支援者追加';document.getElementById('edit-id').value='';['name','tel','email','age','addr','note'].forEach(f=>document.getElementById('f-'+f).value='');document.getElementById('f-area').value='王子保地区';document.getElementById('f-relation').value='知人';document.getElementById('f-level').value='協力者';document.getElementById('f-gender').value='';openModal('modal-supporter');}
 function openEditModal(id){const s=supporters.find(x=>x.id===id);if(!s)return;document.getElementById('modal-supporter-title').textContent='支援者編集';document.getElementById('edit-id').value=id;document.getElementById('f-name').value=s.name||'';document.getElementById('f-area').value=s.area||'王子保地区';document.getElementById('f-tel').value=s.tel||'';document.getElementById('f-relation').value=s.relation||'知人';document.getElementById('f-level').value=s.level||'協力者';document.getElementById('f-email').value=s.email||'';document.getElementById('f-age').value=s.age||'';document.getElementById('f-gender').value=s.gender||'';document.getElementById('f-addr').value=s.addr||'';document.getElementById('f-note').value=s.note||'';openModal('modal-supporter');}
-function saveSupporter(){const name=document.getElementById('f-name').value.trim();if(!name){alert('氏名は必須です');return;}const id=document.getElementById('edit-id').value;const obj={id:id||Date.now().toString(),name,area:document.getElementById('f-area').value,tel:document.getElementById('f-tel').value.trim(),relation:document.getElementById('f-relation').value,level:document.getElementById('f-level').value,email:document.getElementById('f-email').value.trim(),age:document.getElementById('f-age').value.trim(),gender:document.getElementById('f-gender').value,addr:document.getElementById('f-addr').value.trim(),note:document.getElementById('f-note').value.trim(),created:id?(supporters.find(x=>x.id===id)?.created||new Date().toISOString()):new Date().toISOString()};const isNew=!id;if(id){const idx=supporters.findIndex(x=>x.id===id);if(idx>=0)supporters[idx]=obj;}else{supporters.unshift(obj);}saveData();showToast(isNew?`✓ ${obj.name}さんを登録しました（計${supporters.length}名）`:`✓ ${obj.name}さんの情報を更新しました`);closeModal('modal-supporter');renderSupporters();renderDashboard();}
+function saveSupporter(){const name=document.getElementById('f-name').value.trim();if(!name){alert('氏名は必須です');return;}const id=document.getElementById('edit-id').value;const now=new Date().toISOString();const obj={id:id||Date.now().toString(),name,area:document.getElementById('f-area').value,tel:document.getElementById('f-tel').value.trim(),relation:document.getElementById('f-relation').value,level:document.getElementById('f-level').value,email:document.getElementById('f-email').value.trim(),age:document.getElementById('f-age').value.trim(),gender:document.getElementById('f-gender').value,addr:document.getElementById('f-addr').value.trim(),note:document.getElementById('f-note').value.trim(),created:id?(supporters.find(x=>x.id===id)?.created||now):now,updated:now};const isNew=!id;if(id){const idx=supporters.findIndex(x=>x.id===id);if(idx>=0)supporters[idx]=obj;}else{supporters.unshift(obj);}saveData();showToast(isNew?`✓ ${obj.name}さんを登録しました（計${supporters.length}名）`:`✓ ${obj.name}さんの情報を更新しました`);closeModal('modal-supporter');renderSupporters();renderDashboard();}
 function openDeleteModal(id){deleteTargetId=id;openModal('modal-delete');}
 function confirmDelete(){if(!deleteTargetId)return;supporters=supporters.filter(s=>s.id!==deleteTargetId);deleteTargetId=null;saveData();showToast(`✓ 削除しました（残り${supporters.length}名）`);closeModal('modal-delete');renderSupporters();renderDashboard();}
 function openScheduleModal(date){document.getElementById('modal-schedule-title').textContent='予定追加';document.getElementById('s-edit-id').value='';document.getElementById('s-name').value='';document.getElementById('s-date').value=date||'';document.getElementById('s-time').value='';document.getElementById('s-place').value='';document.getElementById('s-person').value='';document.getElementById('s-status').value='予定';document.getElementById('s-note').value='';openModal('modal-schedule');}
@@ -991,6 +1030,10 @@ function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt
 
 loadData();
 updateTokenStatusDisplay();
+// 未送信データがあればページ起動時に即プッシュ
+if(localStorage.getItem('wk_pending_push')&&getGHToken()){
+  setTimeout(()=>pushToGitHub(),1500);
+}
 const savedMode=sessionStorage.getItem('wk_mode');
 if(savedMode==='admin')enterAdmin();
 else if(savedMode==='general')enterGeneral();
