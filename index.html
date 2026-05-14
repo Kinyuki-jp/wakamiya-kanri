@@ -227,6 +227,62 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 .excel-bar { background: #fff; border: 1px solid #dde8e8; padding: 12px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
 .excel-bar-info { font-size: 12px; color: var(--gray); }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── BOTTOM NAV (スマホ専用) ── */
+.bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #1a2e30; border-top: 1px solid rgba(0,163,175,0.3); z-index: 100; }
+.bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10px; color: rgba(255,255,255,0.45); cursor: pointer; padding: 6px 4px; transition: color 0.2s; -webkit-tap-highlight-color: transparent; }
+.bottom-nav-item span:first-child { font-size: 20px; line-height: 1; }
+.bottom-nav-item.active { color: var(--asagi); }
+
+/* ── スマホ全体 (max 480px) ── */
+@media (max-width: 480px) {
+  /* サイドバー非表示 → ボトムナビへ */
+  .sidebar { display: none !important; }
+  .main { margin-left: 0 !important; padding-bottom: 68px; }
+  .bottom-nav { display: flex; }
+
+  /* トップバー */
+  .topbar { padding: 12px 16px; }
+  .topbar-title { font-size: 17px; }
+
+  /* コンテンツ */
+  .content { padding: 16px 12px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-num { font-size: 28px; }
+
+  /* テーブル → カード表示 */
+  .table-wrap { border: none; background: transparent; }
+  .table-wrap .table-header { background: #fff; border: 1px solid #dde8e8; margin-bottom: 10px; padding: 12px 14px; flex-wrap: wrap; gap: 10px; }
+  .table-wrap table thead { display: none; }
+  .table-wrap table { display: block; }
+  .table-wrap table tbody { display: block; }
+  .table-wrap table tbody tr { display: block; background: #fff; border: 1px solid #dde8e8; border-radius: 8px; margin-bottom: 10px; padding: 14px 16px; cursor: pointer; }
+  .table-wrap table tbody td { display: flex; align-items: center; padding: 3px 0; font-size: 13px; border: none; }
+  .table-wrap table tbody td:before { content: attr(data-label); color: #999; font-size: 11px; min-width: 56px; flex-shrink: 0; }
+  .table-wrap table tbody td:empty { display: none; }
+
+  /* モーダル → 画面下から */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { max-width: 100% !important; max-height: 92vh; border-radius: 14px 14px 0 0; }
+
+  /* ボタン タッチしやすく */
+  .btn { padding: 10px 16px; font-size: 13px; min-height: 40px; }
+  .btn-edit, .btn-danger { padding: 8px 14px; }
+
+  /* 検索 */
+  .search-input { width: 100%; }
+
+  /* カレンダー → リストのみ */
+  .cal-grid { display: none; }
+  .cal-nav { flex-wrap: wrap; gap: 8px; }
+
+  /* ロック画面 */
+  #lock-screen { flex-direction: column; }
+  .lock-left { padding: 28px 20px; min-height: 40vh; }
+  .lock-right { width: 100%; padding: 24px 20px; }
+  .lock-photo-ring { width: 100px; height: 100px; }
+  .lock-name-ja { font-size: 24px; }
+}
 @media (max-width: 768px) {
   .sidebar { width: 160px; }
   .sidebar-logo, .sidebar-photo-name, .sidebar-photo-sub { display: none; }
@@ -510,6 +566,14 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 
     </div>
   </div>
+  <!-- ボトムナビ（スマホ専用） -->
+  <div class="bottom-nav" id="bottom-nav">
+    <div class="bottom-nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)"><span>📊</span><span>ホーム</span></div>
+    <div class="bottom-nav-item" data-page="supporters" onclick="showPage('supporters',this)"><span>👥</span><span>名簿</span></div>
+    <div class="bottom-nav-item" data-page="schedule" onclick="showPage('schedule',this)"><span>📅</span><span>予定</span></div>
+    <div class="bottom-nav-item" data-page="settings" onclick="showPage('settings',this)"><span>⚙️</span><span>設定</span></div>
+    <div class="bottom-nav-item" onclick="logoutToLock()"><span>🔓</span><span>退出</span></div>
+  </div>
 </div>
 
 <!-- MODALS -->
@@ -663,17 +727,14 @@ async function syncFromGitHub(manual=false){
     if(!r.ok){if(manual)setSyncStatus('offline');return;}
     const data=await r.json();
     const remote=data.supporters||[];
-    const localIds=new Set(supporters.map(s=>s.id));
-    const newItems=remote.filter(s=>!localIds.has(s.id));
-    if(newItems.length>0){
-      supporters=[...newItems,...supporters];
-      localStorage.setItem('wk_supporters',JSON.stringify(supporters));
-      const tc=document.getElementById('topbar-count');
-      if(tc)tc.textContent=supporters.length;
-      if(currentMode==='admin'){renderSupporters();renderDashboard();}
-      if(currentMode==='general'){renderGeneralHome();}
-      if(manual)showToast('✓ '+newItems.length+'名の新規データを取得しました');
-    }else if(manual){showToast('✓ 最新状態です（'+supporters.length+'名）');}
+    // GitHubを唯一の正の情報源として完全置換（編集・削除も反映）
+    supporters=remote;
+    localStorage.setItem('wk_supporters',JSON.stringify(supporters));
+    const tc=document.getElementById('topbar-count');
+    if(tc)tc.textContent=supporters.length;
+    if(currentMode==='admin'){renderSupporters();renderDashboard();}
+    if(currentMode==='general'){renderGeneralHome();}
+    if(manual)showToast('✓ 同期しました（'+supporters.length+'名）');
     setSyncStatus('synced');
   }catch(e){setSyncStatus(manual?'offline':'offline');}
 }
@@ -829,8 +890,8 @@ async function loginAdmin(){
   }
 }
 function loginGeneral(){enterGeneral();}
-function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';const tc=document.getElementById('topbar-count');if(tc)tc.textContent=supporters.length;renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
-function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';renderGeneralHome();const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
+async function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';if(getGHToken())await syncFromGitHub(false);const tc=document.getElementById('topbar-count');if(tc)tc.textContent=supporters.length;renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
+async function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';await syncFromGitHub(false);renderGeneralHome();const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
 function logoutToLock(){sessionStorage.removeItem('wk_mode');currentMode='';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('lock-screen').style.display='flex';showModeSelect();}
 
 /* ── GENERAL ── */
@@ -905,9 +966,9 @@ function generalRegister(){
 }
 
 /* ── ADMIN ── */
-function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理',settings:'設定'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();if(name==='settings')updateTokenStatusDisplay();}
+function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.bottom-nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');document.querySelectorAll('.bottom-nav-item[data-page="'+name+'"]').forEach(n=>n.classList.add('active'));const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理',settings:'設定'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();if(name==='settings')updateTokenStatusDisplay();}
 function renderDashboard(){const now=new Date();const tm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');document.getElementById('stat-total').textContent=supporters.length;document.getElementById('stat-ojibo').textContent=supporters.filter(s=>s.area==='王子保地区').length;document.getElementById('stat-schedule').textContent=schedules.length;document.getElementById('stat-new').textContent=supporters.filter(s=>s.created&&s.created.startsWith(tm)).length;const tbody=document.getElementById('recent-supporters');tbody.innerHTML='';supporters.slice(0,8).forEach(s=>{const d=s.created?new Date(s.created):null;const ds=d?`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`:'-';tbody.innerHTML+=`<tr><td style="font-weight:700;">${escHtml(s.name)}</td><td>${areaTag(s.area)}</td><td>${escHtml(s.relation||'')}</td><td>${levelBadge(s.level)}</td><td style="font-size:12px;color:#888;">${ds}</td></tr>`;});if(!supporters.length)tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:#aaa;">支援者がいません</td></tr>';}
-function renderSupporters(){const q=(document.getElementById('search-input')?.value||'').toLowerCase();const filtered=supporters.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.area||'').toLowerCase().includes(q));const tbody=document.getElementById('supporters-tbody');tbody.innerHTML='';if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa;">該当なし</td></tr>';return;}filtered.forEach(s=>{tbody.innerHTML+=`<tr style="cursor:pointer;" onclick="openDetailModal('${s.id}')"><td style="font-weight:700;">${escHtml(s.name)}</td><td>${areaTag(s.area)}</td><td style="font-size:12px;">${escHtml(s.tel||'-')}</td><td style="font-size:12px;color:#555;">${escHtml(s.addr||'-')}</td><td>${escHtml(s.relation||'')}</td><td>${levelBadge(s.level)}</td><td onclick="event.stopPropagation()"><button class="btn btn-edit" onclick="openEditModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="openDeleteModal('${s.id}')" style="margin-left:4px;">削除</button></td></tr>`;});}
+function renderSupporters(){const q=(document.getElementById('search-input')?.value||'').toLowerCase();const filtered=supporters.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.area||'').toLowerCase().includes(q));const tbody=document.getElementById('supporters-tbody');tbody.innerHTML='';if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa;">該当なし</td></tr>';return;}filtered.forEach(s=>{tbody.innerHTML+=`<tr style="cursor:pointer;" onclick="openDetailModal('${s.id}')"><td data-label="氏名" style="font-weight:700;">${escHtml(s.name)}</td><td data-label="地区">${areaTag(s.area)}</td><td data-label="電話" style="font-size:12px;">${escHtml(s.tel||'-')}</td><td data-label="住所" style="font-size:12px;color:#555;">${escHtml(s.addr||'-')}</td><td data-label="関係">${escHtml(s.relation||'')}</td><td data-label="レベル">${levelBadge(s.level)}</td><td data-label="" onclick="event.stopPropagation()"><button class="btn btn-edit" onclick="openEditModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="openDeleteModal('${s.id}')" style="margin-left:4px;">削除</button></td></tr>`;});}
 function areaTag(a){return a==='王子保地区'?`<span class="badge badge-a">${a}</span>`:`<span style="font-size:12px;color:#666;">${escHtml(a||'')}</span>`;}
 function levelBadge(l){const m={'協力者':'badge-a','支持者':'badge-b','応援者':'badge-b','中立':'badge-c'};return `<span class="badge ${m[l]||'badge-c'}">${escHtml(l||'')}</span>`;}
 function openAddModal(){document.getElementById('modal-supporter-title').textContent='支援者追加';document.getElementById('edit-id').value='';['name','tel','email','age','addr','note'].forEach(f=>document.getElementById('f-'+f).value='');document.getElementById('f-area').value='王子保地区';document.getElementById('f-relation').value='知人';document.getElementById('f-level').value='協力者';document.getElementById('f-gender').value='';openModal('modal-supporter');}
