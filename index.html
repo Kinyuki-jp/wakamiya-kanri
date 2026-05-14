@@ -580,7 +580,9 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 </div>
 
 <script>
-const ADMIN_PASSWORD = 'wakamiya2025';
+const ADMIN_PASSWORD_HASH = '7105e8e8fe80690c30db900943c4d2b138e2e4beca46d5673ca3929960d0d83a';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 10 * 60 * 1000;
 /* ── GitHub 同期設定（トークンはlocalStorageに保存、HTMLには書かない） ── */
 const GH_REPO='Kinyuki-jp/wakamiya-kanri';
 const GH_FILE='supporters.json';
@@ -794,7 +796,38 @@ function importJSON(event){
 /* ── LOGIN ── */
 function showModeSelect(){document.getElementById('lock-mode-select').style.display='flex';document.getElementById('lock-pw-area').classList.remove('show');document.getElementById('lock-error').style.display='none';document.getElementById('pw-input').value='';}
 function showAdminPw(){document.getElementById('lock-mode-select').style.display='none';document.getElementById('lock-pw-area').classList.add('show');setTimeout(()=>document.getElementById('pw-input').focus(),100);}
-function loginAdmin(){const pw=document.getElementById('pw-input').value;if(pw===ADMIN_PASSWORD){document.getElementById('lock-error').style.display='none';enterAdmin();}else{document.getElementById('lock-error').style.display='block';document.getElementById('pw-input').value='';}}
+async function loginAdmin(){
+  const errorEl=document.getElementById('lock-error');
+  const lockUntil=parseInt(sessionStorage.getItem('lockUntil')||'0');
+  if(Date.now()<lockUntil){
+    const mins=Math.ceil((lockUntil-Date.now())/60000);
+    errorEl.textContent=`ロックアウト中です。${mins}分後に再試行してください`;
+    errorEl.style.display='block';
+    return;
+  }
+  const pw=document.getElementById('pw-input').value;
+  const hashBuffer=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+  const hashHex=[...new Uint8Array(hashBuffer)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  if(hashHex===ADMIN_PASSWORD_HASH){
+    sessionStorage.removeItem('loginAttempts');
+    sessionStorage.removeItem('lockUntil');
+    errorEl.style.display='none';
+    enterAdmin();
+  }else{
+    const attempts=parseInt(sessionStorage.getItem('loginAttempts')||'0')+1;
+    sessionStorage.setItem('loginAttempts',String(attempts));
+    const remaining=MAX_ATTEMPTS-attempts;
+    if(remaining<=0){
+      sessionStorage.setItem('lockUntil',String(Date.now()+LOCKOUT_MS));
+      sessionStorage.removeItem('loginAttempts');
+      errorEl.textContent='ログイン試行が上限を超えました。10分後に再試行してください';
+    }else{
+      errorEl.textContent=`パスワードが正しくありません（残り${remaining}回）`;
+    }
+    errorEl.style.display='block';
+    document.getElementById('pw-input').value='';
+  }
+}
 function loginGeneral(){enterGeneral();}
 function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';const tc=document.getElementById('topbar-count');if(tc)tc.textContent=supporters.length;renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
 function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';renderGeneralHome();const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
