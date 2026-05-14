@@ -272,9 +272,15 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
   /* 検索 */
   .search-input { width: 100%; }
 
-  /* カレンダー → リストのみ */
-  .cal-grid { display: none; }
+  /* カレンダー：グリッドのままコンパクト化 */
   .cal-nav { flex-wrap: wrap; gap: 8px; }
+  .cal-month-label { font-size: 15px; }
+  .cal-grid { gap: 1px; }
+  .cal-head { padding: 4px 2px; font-size: 9px; letter-spacing: 0.05em; }
+  .cal-cell { min-height: 48px; padding: 3px 2px; }
+  .cal-day { font-size: 10px; margin-bottom: 2px; }
+  .cal-event { font-size: 9px; padding: 1px 3px; }
+  .cal-add-btn { font-size: 12px; }
 
   /* ロック画面 */
   #lock-screen { flex-direction: column; }
