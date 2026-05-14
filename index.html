@@ -517,7 +517,7 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
           <div class="stat-card"><div class="stat-num" id="stat-new">0</div><div class="stat-label">今月の新規</div></div>
         </div>
         <div class="section-title">最近の支援者</div>
-        <div class="table-wrap"><table><thead><tr><th>氏名</th><th>地区</th><th>関係</th><th>レベル</th><th>登録日</th></tr></thead><tbody id="recent-supporters"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>氏名</th><th>地区</th><th>経路</th><th>レベル</th><th>登録日</th></tr></thead><tbody id="recent-supporters"></tbody></table></div>
       </div>
       <div id="page-supporters" class="page">
         <div class="excel-bar">
@@ -534,7 +534,7 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
           <div class="table-header">
             <input class="search-input" id="search-input" type="text" placeholder="🔍 名前・地区で検索…" oninput="renderSupporters()">
           </div>
-          <table><thead><tr><th>氏名</th><th>地区</th><th>電話番号</th><th>住所</th><th>関係</th><th>レベル</th><th></th></tr></thead><tbody id="supporters-tbody"></tbody></table>
+          <table><thead><tr><th>氏名</th><th>地区</th><th>電話番号</th><th>経路</th><th>関係</th><th>レベル</th><th></th></tr></thead><tbody id="supporters-tbody"></tbody></table>
         </div>
       </div>
       <div id="page-schedule" class="page">
@@ -558,9 +558,15 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
             <button class="btn btn-outline" onclick="syncFromGitHub(true)" style="margin-left:10px;">🔄 今すぐ同期</button>
           </div>
           <div class="stat-card" style="margin-bottom:20px;">
-            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">📋 Googleフォーム連携</div>
-            <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:14px;">Googleフォームから支援者登録できるように設定します。フォームに回答があると自動的にこのシステムに追加されます。</p>
-            <p style="font-size:12px;color:#888;line-height:1.8;">① Googleフォームを作成 → ② Googleスプレッドシートに回答を記録 → ③ Apps Scriptを設定 → ④ トークンをApps Scriptに登録</p>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">🌐 一般登録の中継URL（Google Apps Script）</div>
+            <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:14px;">一般訪問者が登録フォームから送信したデータを、自動でGitHubに反映するための中継サーバーURLです。<br>セットアップ手順は <a href="https://github.com/Kinyuki-jp/wakamiya-kanri/blob/main/apps-script.gs" target="_blank" style="color:var(--asagi);">apps-script.gs</a> の冒頭コメントを参照してください。</p>
+            <input class="form-input" id="gas-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:10px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="saveGasUrl()">💾 URLを保存</button>
+              <button class="btn btn-outline" onclick="testGasUrl()">🧪 動作確認</button>
+              <button class="btn btn-outline" onclick="clearGasUrl()" style="color:#c0392b;border-color:#c0392b;">クリア</button>
+            </div>
+            <p id="gas-url-status" style="font-size:11px;color:#888;margin-top:10px;"></p>
           </div>
           <div class="stat-card">
             <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">🗂 データ管理</div>
@@ -999,26 +1005,110 @@ function renderGeneralActivity(){
     list.appendChild(div);
   });
 }
-function generalRegister(){
+async function generalRegister(){
   const name=document.getElementById('g-reg-name').value.trim();
   if(!name){alert('お名前を入力してください');return;}
+  const payload={
+    name:name,
+    area:document.getElementById('g-reg-area').value,
+    tel:document.getElementById('g-reg-tel').value.trim(),
+    note:document.getElementById('g-reg-note').value.trim()
+  };
+  const gasUrl=localStorage.getItem('wk_gas_url')||'';
+  // Apps Script URLが設定されていれば、そこ経由でGitHubに登録
+  if(gasUrl){
+    try{
+      showToast('送信中…');
+      const r=await fetch(gasUrl,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify(payload),
+        redirect:'follow'
+      });
+      const result=await r.json();
+      if(result.ok){
+        document.getElementById('g-reg-name').value='';
+        document.getElementById('g-reg-tel').value='';
+        document.getElementById('g-reg-note').value='';
+        showToast('✓ 登録ありがとうございました！');
+        await syncFromGitHub(false);
+        gShowTab('home',document.querySelectorAll('.g-tab')[0]);
+        return;
+      }else{
+        alert('登録に失敗しました：'+(result.error||'不明なエラー'));
+        return;
+      }
+    }catch(e){
+      alert('通信エラーが発生しました。時間をおいて再試行してください。\n('+e.message+')');
+      return;
+    }
+  }
+  // フォールバック：URL未設定の場合はローカルのみ保存
   const now=new Date().toISOString();
-  supporters.unshift({id:Date.now().toString(),name,area:document.getElementById('g-reg-area').value,tel:document.getElementById('g-reg-tel').value.trim(),relation:'一般登録',level:'支持者',note:document.getElementById('g-reg-note').value.trim(),email:'',age:'',gender:'',addr:'',created:now,updated:now});
+  supporters.unshift({id:Date.now().toString(),name,area:payload.area,tel:payload.tel,relation:'一般登録',level:'支持者',note:payload.note,email:'',age:'',gender:'',addr:'',source:'general-form-local',created:now,updated:now});
   saveData();
   document.getElementById('g-reg-name').value='';document.getElementById('g-reg-tel').value='';document.getElementById('g-reg-note').value='';
   renderGeneralHome(); showToast('✓ 登録しました！ありがとうございます');
   gShowTab('home',document.querySelectorAll('.g-tab')[0]);
 }
 
+// Apps Script URL 管理
+function saveGasUrl(){
+  const url=document.getElementById('gas-url-input').value.trim();
+  if(!url){alert('URLを入力してください');return;}
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec/.test(url)){
+    if(!confirm('URLの形式が想定と違います。それでも保存しますか？'))return;
+  }
+  localStorage.setItem('wk_gas_url',url);
+  showToast('✓ URLを保存しました');
+  updateGasUrlStatus();
+}
+function clearGasUrl(){
+  if(!confirm('保存済みのURLを削除しますか？'))return;
+  localStorage.removeItem('wk_gas_url');
+  document.getElementById('gas-url-input').value='';
+  updateGasUrlStatus();
+  showToast('✓ クリアしました');
+}
+async function testGasUrl(){
+  const url=document.getElementById('gas-url-input').value.trim()||localStorage.getItem('wk_gas_url');
+  if(!url){alert('URLを入力してください');return;}
+  const st=document.getElementById('gas-url-status');
+  st.textContent='⏳ 接続テスト中…'; st.style.color='#888';
+  try{
+    const r=await fetch(url,{method:'GET',redirect:'follow'});
+    const j=await r.json();
+    if(j.ok){st.textContent='✅ 接続OK：'+(j.message||'稼働中');st.style.color='#27ae60';}
+    else{st.textContent='⚠️ 応答異常：'+JSON.stringify(j);st.style.color='#c0392b';}
+  }catch(e){
+    st.textContent='❌ 接続失敗：'+e.message;st.style.color='#c0392b';
+  }
+}
+function updateGasUrlStatus(){
+  const saved=localStorage.getItem('wk_gas_url')||'';
+  const inp=document.getElementById('gas-url-input');
+  if(inp)inp.value=saved;
+  const st=document.getElementById('gas-url-status');
+  if(!st)return;
+  if(saved){st.textContent='✅ 設定済み（'+saved.slice(0,50)+'…）';st.style.color='#27ae60';}
+  else{st.textContent='⚠️ 未設定（一般登録はローカル保存のみになります）';st.style.color='#c87d20';}
+}
+
 /* ── ADMIN ── */
-function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.bottom-nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');document.querySelectorAll('.bottom-nav-item[data-page="'+name+'"]').forEach(n=>n.classList.add('active'));const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理',settings:'設定'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();if(name==='settings')updateTokenStatusDisplay();}
-function renderDashboard(){const now=new Date();const tm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');document.getElementById('stat-total').textContent=supporters.length;document.getElementById('stat-ojibo').textContent=supporters.filter(s=>s.area==='王子保地区').length;document.getElementById('stat-schedule').textContent=schedules.length;document.getElementById('stat-new').textContent=supporters.filter(s=>s.created&&s.created.startsWith(tm)).length;const tbody=document.getElementById('recent-supporters');tbody.innerHTML='';supporters.slice(0,8).forEach(s=>{const d=s.created?new Date(s.created):null;const ds=d?`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`:'-';tbody.innerHTML+=`<tr><td style="font-weight:700;">${escHtml(s.name)}</td><td>${areaTag(s.area)}</td><td>${escHtml(s.relation||'')}</td><td>${levelBadge(s.level)}</td><td style="font-size:12px;color:#888;">${ds}</td></tr>`;});if(!supporters.length)tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:#aaa;">支援者がいません</td></tr>';}
-function renderSupporters(){const q=(document.getElementById('search-input')?.value||'').toLowerCase();const filtered=supporters.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.area||'').toLowerCase().includes(q));const tbody=document.getElementById('supporters-tbody');tbody.innerHTML='';if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa;">該当なし</td></tr>';return;}filtered.forEach(s=>{tbody.innerHTML+=`<tr style="cursor:pointer;" onclick="openDetailModal('${s.id}')"><td data-label="氏名" style="font-weight:700;">${escHtml(s.name)}</td><td data-label="地区">${areaTag(s.area)}</td><td data-label="電話" style="font-size:12px;">${escHtml(s.tel||'-')}</td><td data-label="住所" style="font-size:12px;color:#555;">${escHtml(s.addr||'-')}</td><td data-label="関係">${escHtml(s.relation||'')}</td><td data-label="レベル">${levelBadge(s.level)}</td><td data-label="" onclick="event.stopPropagation()"><button class="btn btn-edit" onclick="openEditModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="openDeleteModal('${s.id}')" style="margin-left:4px;">削除</button></td></tr>`;});}
+function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.bottom-nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');document.querySelectorAll('.bottom-nav-item[data-page="'+name+'"]').forEach(n=>n.classList.add('active'));const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理',settings:'設定'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();if(name==='settings'){updateTokenStatusDisplay();updateGasUrlStatus();}}
+function renderDashboard(){const now=new Date();const tm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');document.getElementById('stat-total').textContent=supporters.length;document.getElementById('stat-ojibo').textContent=supporters.filter(s=>s.area==='王子保地区').length;document.getElementById('stat-schedule').textContent=schedules.length;document.getElementById('stat-new').textContent=supporters.filter(s=>s.created&&s.created.startsWith(tm)).length;const tbody=document.getElementById('recent-supporters');tbody.innerHTML='';supporters.slice(0,8).forEach(s=>{const d=s.created?new Date(s.created):null;const ds=d?`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`:'-';tbody.innerHTML+=`<tr><td data-label="氏名" style="font-weight:700;">${escHtml(s.name)}</td><td data-label="地区">${areaTag(s.area)}</td><td data-label="経路">${sourceBadge(s.source)}</td><td data-label="レベル">${levelBadge(s.level)}</td><td data-label="登録日" style="font-size:12px;color:#888;">${ds}</td></tr>`;});if(!supporters.length)tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:#aaa;">支援者がいません</td></tr>';}
+function renderSupporters(){const q=(document.getElementById('search-input')?.value||'').toLowerCase();const filtered=supporters.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.area||'').toLowerCase().includes(q));const tbody=document.getElementById('supporters-tbody');tbody.innerHTML='';if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa;">該当なし</td></tr>';return;}filtered.forEach(s=>{tbody.innerHTML+=`<tr style="cursor:pointer;" onclick="openDetailModal('${s.id}')"><td data-label="氏名" style="font-weight:700;">${escHtml(s.name)}</td><td data-label="地区">${areaTag(s.area)}</td><td data-label="電話" style="font-size:12px;">${escHtml(s.tel||'-')}</td><td data-label="経路">${sourceBadge(s.source)}</td><td data-label="関係">${escHtml(s.relation||'')}</td><td data-label="レベル">${levelBadge(s.level)}</td><td data-label="" onclick="event.stopPropagation()"><button class="btn btn-edit" onclick="openEditModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="openDeleteModal('${s.id}')" style="margin-left:4px;">削除</button></td></tr>`;});}
 function areaTag(a){return a==='王子保地区'?`<span class="badge badge-a">${a}</span>`:`<span style="font-size:12px;color:#666;">${escHtml(a||'')}</span>`;}
 function levelBadge(l){const m={'協力者':'badge-a','支持者':'badge-b','応援者':'badge-b','中立':'badge-c'};return `<span class="badge ${m[l]||'badge-c'}">${escHtml(l||'')}</span>`;}
+function sourceBadge(s){
+  if(s==='general-form')return '<span class="badge" style="background:rgba(232,168,76,0.15);color:#c87d20;">🌐 一般登録</span>';
+  if(s==='general-form-local')return '<span class="badge" style="background:rgba(204,51,51,0.15);color:#cc3333;" title="GAS未設定のためローカル保存のみ">⚠️ 一般(未送信)</span>';
+  if(s==='admin')return '<span class="badge" style="background:rgba(0,138,150,0.12);color:var(--asagi);">🔐 管理者</span>';
+  return '<span class="badge badge-c">—</span>';
+}
 function openAddModal(){document.getElementById('modal-supporter-title').textContent='支援者追加';document.getElementById('edit-id').value='';['name','tel','email','age','addr','note'].forEach(f=>document.getElementById('f-'+f).value='');document.getElementById('f-area').value='王子保地区';document.getElementById('f-relation').value='知人';document.getElementById('f-level').value='協力者';document.getElementById('f-gender').value='';openModal('modal-supporter');}
 function openEditModal(id){const s=supporters.find(x=>x.id===id);if(!s)return;document.getElementById('modal-supporter-title').textContent='支援者編集';document.getElementById('edit-id').value=id;document.getElementById('f-name').value=s.name||'';document.getElementById('f-area').value=s.area||'王子保地区';document.getElementById('f-tel').value=s.tel||'';document.getElementById('f-relation').value=s.relation||'知人';document.getElementById('f-level').value=s.level||'協力者';document.getElementById('f-email').value=s.email||'';document.getElementById('f-age').value=s.age||'';document.getElementById('f-gender').value=s.gender||'';document.getElementById('f-addr').value=s.addr||'';document.getElementById('f-note').value=s.note||'';openModal('modal-supporter');}
-function saveSupporter(){const name=document.getElementById('f-name').value.trim();if(!name){alert('氏名は必須です');return;}const id=document.getElementById('edit-id').value;const now=new Date().toISOString();const obj={id:id||Date.now().toString(),name,area:document.getElementById('f-area').value,tel:document.getElementById('f-tel').value.trim(),relation:document.getElementById('f-relation').value,level:document.getElementById('f-level').value,email:document.getElementById('f-email').value.trim(),age:document.getElementById('f-age').value.trim(),gender:document.getElementById('f-gender').value,addr:document.getElementById('f-addr').value.trim(),note:document.getElementById('f-note').value.trim(),created:id?(supporters.find(x=>x.id===id)?.created||now):now,updated:now};const isNew=!id;if(id){const idx=supporters.findIndex(x=>x.id===id);if(idx>=0)supporters[idx]=obj;}else{supporters.unshift(obj);}saveData();showToast(isNew?`✓ ${obj.name}さんを登録しました（計${supporters.length}名）`:`✓ ${obj.name}さんの情報を更新しました`);closeModal('modal-supporter');renderSupporters();renderDashboard();}
+function saveSupporter(){const name=document.getElementById('f-name').value.trim();if(!name){alert('氏名は必須です');return;}const id=document.getElementById('edit-id').value;const now=new Date().toISOString();const existing=id?supporters.find(x=>x.id===id):null;const obj={id:id||Date.now().toString(),name,area:document.getElementById('f-area').value,tel:document.getElementById('f-tel').value.trim(),relation:document.getElementById('f-relation').value,level:document.getElementById('f-level').value,email:document.getElementById('f-email').value.trim(),age:document.getElementById('f-age').value.trim(),gender:document.getElementById('f-gender').value,addr:document.getElementById('f-addr').value.trim(),note:document.getElementById('f-note').value.trim(),source:existing?.source||'admin',created:existing?.created||now,updated:now};const isNew=!id;if(id){const idx=supporters.findIndex(x=>x.id===id);if(idx>=0)supporters[idx]=obj;}else{supporters.unshift(obj);}saveData();showToast(isNew?`✓ ${obj.name}さんを登録しました（計${supporters.length}名）`:`✓ ${obj.name}さんの情報を更新しました`);closeModal('modal-supporter');renderSupporters();renderDashboard();}
 function openDeleteModal(id){deleteTargetId=id;openModal('modal-delete');}
 function confirmDelete(){if(!deleteTargetId)return;supporters=supporters.filter(s=>s.id!==deleteTargetId);deleteTargetId=null;saveData();showToast(`✓ 削除しました（残り${supporters.length}名）`);closeModal('modal-delete');renderSupporters();renderDashboard();}
 function openScheduleModal(date){document.getElementById('modal-schedule-title').textContent='予定追加';document.getElementById('s-edit-id').value='';document.getElementById('s-name').value='';document.getElementById('s-date').value=date||'';document.getElementById('s-time').value='';document.getElementById('s-place').value='';document.getElementById('s-person').value='';document.getElementById('s-status').value='予定';document.getElementById('s-note').value='';openModal('modal-schedule');}
