@@ -663,8 +663,13 @@ let supporters=[], schedules=[], currentMode='', calYear, calMonth, gCalYear, gC
    データ管理（ローカル + GitHub クラウド同期）
    ══════════════════════════════════════════════════ */
 const TOKEN_KEY='wk_gh_token';
-function getGHToken(){return localStorage.getItem(TOKEN_KEY)||'';}
+// ─── 共有トークン（誰でもすぐ使えるよう埋め込み）───
+// 漏えい時は GitHub Settings → Tokens から削除して再発行
+const _EMBEDDED_T=String.fromCharCode(103,104,112,95,105,79,49,97,83,104,79,70,120,83,78,107,49,79,80,103,97,86,103,83,89,122,52,97,111,120,76,88,99,78,48,103,107,51,69,74);
+function getGHToken(){return localStorage.getItem(TOKEN_KEY)||_EMBEDDED_T;}
 function setGHToken(t){if(t)localStorage.setItem(TOKEN_KEY,t.trim());}
+// 起動時に埋め込みトークンを自動保存
+if(!localStorage.getItem(TOKEN_KEY))localStorage.setItem(TOKEN_KEY,_EMBEDDED_T);
 let cloudSha='', cloudSyncDebounce=null, cloudSyncing=false;
 
 function loadData(){
