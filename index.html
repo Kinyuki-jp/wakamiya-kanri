@@ -490,13 +490,22 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
         <div style="max-width:620px;">
           <!-- クラウド同期設定 -->
           <div class="stat-card" style="margin-bottom:20px;border-left:4px solid var(--asagi);">
-            <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;">☁️ クラウド同期設定（最重要）</div>
-            <p style="font-size:12px;color:#888;margin-bottom:14px;">この設定をすることで、スマホ・PC・どの端末から登録しても全員に同期されます</p>
+            <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;">☁️ クラウド同期設定</div>
+            <p style="font-size:12px;color:#888;margin-bottom:14px;">設定すると、スマホ・PC・どの端末から登録しても<strong>全員に自動同期</strong>されます（30秒ごと）</p>
             <div id="token-status-display" style="font-size:13px;font-weight:700;padding:10px 14px;border-radius:6px;background:#f5f5f5;margin-bottom:14px;color:#888;">未設定</div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
               <button class="btn btn-primary" onclick="openTokenModal()">☁️ URLを設定する</button>
               <button class="btn btn-outline" onclick="syncFromGAS(true)">🔄 今すぐ同期</button>
               <button class="btn btn-outline" onclick="pushToGAS()">📤 クラウドに送信</button>
+            </div>
+            <!-- スタッフ共有 -->
+            <div style="background:#f0f8ff;border:1px solid #b8d8f0;border-radius:8px;padding:14px;">
+              <div style="font-size:13px;font-weight:700;color:#1a5f8a;margin-bottom:8px;">👥 スタッフに共有する</div>
+              <p style="font-size:12px;color:#555;line-height:1.8;margin-bottom:12px;">スタッフのスマホでQRコードをスキャック、またはリンクを送るだけで<br>自動的に設定が完了します。パスワードは今まで通りです。</p>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="showStaffQR()" style="background:#1a5f8a;">📱 QRコードを表示</button>
+                <button class="btn btn-outline" onclick="copyStaffLink()">🔗 リンクをコピー</button>
+              </div>
             </div>
           </div>
           <!-- Googleフォーム連携 -->
@@ -984,11 +993,77 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+/* ══════════════════════════════════════
+   起動時処理
+   ══════════════════════════════════════ */
+// URLパラメータで自動設定（スタッフが共有リンクを開いたとき）
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  const gasParam=p.get('gas');
+  if(gasParam){
+    setGASUrl(decodeURIComponent(gasParam));
+    // URLをきれいにする（パラメータを消す）
+    history.replaceState({},'',window.location.pathname);
+    setTimeout(()=>showToast('✅ クラウド同期の設定が完了しました！'),600);
+  }
+})();
+
 loadData();
 updateTokenStatusDisplay();
 const savedMode=sessionStorage.getItem('wk_mode');
 if(savedMode==='admin')enterAdmin();
 else if(savedMode==='general')enterGeneral();
+
+/* ══════════════════════════════════════
+   自動ポーリング（30秒ごとにクラウドから最新データ取得）
+   ・管理画面でも一般画面でも動作
+   ・新しいデータがあれば自動的に画面に反映
+   ══════════════════════════════════════ */
+setInterval(function(){
+  if(currentMode==='admin'||currentMode==='general'){
+    syncFromGAS(false); // silentモード（トーストなし）
+  }
+},30000);
+
+/* ══════════════════════════════════════
+   スタッフ用セットアップリンク・QRコード生成
+   ══════════════════════════════════════ */
+function generateStaffSetupLink(){
+  const url=getGASUrl();
+  if(!url){
+    showToast('⚠️ まずクラウドURLを設定してください');
+    return '';
+  }
+  const base=window.location.origin+window.location.pathname;
+  return base+'?gas='+encodeURIComponent(url);
+}
+
+function copyStaffLink(){
+  const link=generateStaffSetupLink();
+  if(!link)return;
+  navigator.clipboard.writeText(link).then(()=>{
+    showToast('✅ スタッフ用リンクをコピーしました！LINEなどで共有してください');
+  }).catch(()=>{
+    prompt('このURLをコピーしてスタッフに送ってください：',link);
+  });
+}
+
+function showStaffQR(){
+  const link=generateStaffSetupLink();
+  if(!link)return;
+  const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link);
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML=`
+    <div style="background:#fff;padding:32px;border-radius:12px;text-align:center;max-width:300px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📱 スタッフ用QRコード</div>
+      <div style="font-size:12px;color:#888;margin-bottom:16px;">スタッフのスマホでスキャンするだけで<br>自動的に同期設定が完了します</div>
+      <img src="${qrUrl}" style="width:220px;height:220px;border:1px solid #eee;">
+      <div style="font-size:11px;color:#aaa;margin-top:12px;">パスワードは今まで通り「wakamiya2025」</div>
+      <button onclick="this.closest('div[style]').remove()" style="margin-top:16px;background:#008a96;color:#fff;border:none;padding:10px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">閉じる</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
 </script>
 </body>
 </html>
