@@ -442,7 +442,7 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span id="sync-status" style="font-size:11px;color:#888;letter-spacing:.05em;"></span>
         <div class="topbar-badge">🔐 管理者｜<span id="topbar-count">0</span>名登録済</div>
-        <button onclick="syncFromGAS(true)" style="background:rgba(0,163,175,.15);color:var(--asagi);border:1px solid rgba(0,163,175,.3);border-radius:5px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;" title="クラウドと同期">🔄 同期</button>
+        <button onclick="syncFromCloud(true)" style="background:rgba(0,163,175,.15);color:var(--asagi);border:1px solid rgba(0,163,175,.3);border-radius:5px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;" title="クラウドと同期">🔄 同期</button>
         <button onclick="logoutToLock()" style="background:#e74c3c;color:#fff;border:none;border-radius:5px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:0.05em;" title="ロック画面へ戻る">← 戻る</button>
       </div>
     </div>
@@ -494,9 +494,9 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
             <p style="font-size:12px;color:#888;margin-bottom:14px;">設定すると、スマホ・PC・どの端末から登録しても<strong>全員に自動同期</strong>されます（30秒ごと）</p>
             <div id="token-status-display" style="font-size:13px;font-weight:700;padding:10px 14px;border-radius:6px;background:#f5f5f5;margin-bottom:14px;color:#888;">未設定</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-              <button class="btn btn-primary" onclick="openTokenModal()">☁️ URLを設定する</button>
-              <button class="btn btn-outline" onclick="syncFromGAS(true)">🔄 今すぐ同期</button>
-              <button class="btn btn-outline" onclick="pushToGAS()">📤 クラウドに送信</button>
+              <button class="btn btn-primary" onclick="openTokenModal()">🔑 トークンを設定する</button>
+              <button class="btn btn-outline" onclick="syncFromCloud(true)">🔄 今すぐ同期</button>
+              <button class="btn btn-outline" onclick="pushToCloud()">📤 クラウドに送信</button>
             </div>
             <!-- スタッフ共有 -->
             <div style="background:#f0f8ff;border:1px solid #b8d8f0;border-radius:8px;padding:14px;">
@@ -573,22 +573,20 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 </div>
 <div class="modal-overlay" id="modal-token">
   <div class="modal" style="max-width:500px;">
-    <div class="modal-head"><div class="modal-title">☁️ クラウド同期URL設定</div><button class="modal-close" onclick="closeModal('modal-token')">✕</button></div>
+    <div class="modal-head"><div class="modal-title">🔑 クラウド同期トークン設定</div><button class="modal-close" onclick="closeModal('modal-token')">✕</button></div>
     <div class="modal-body">
-      <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:16px;">Google Apps Script のデプロイURLを設定します。設定後は、<strong>どの端末から登録しても自動的に全端末に同期</strong>されます。</p>
+      <p style="font-size:13px;color:#555;line-height:1.8;margin-bottom:16px;">GitHub Personal Access Token を設定します。設定後は<strong>どの端末から登録しても自動的に全端末に同期</strong>されます。</p>
       <div class="form-group">
-        <label class="form-label">Apps Script デプロイURL（https://script.google.com/macros/s/... から始まる文字列）</label>
-        <input class="form-input" id="gas-url-input" type="url" placeholder="https://script.google.com/macros/s/XXXXX/exec" autocomplete="off" style="font-size:12px;">
+        <label class="form-label">GitHubトークン（github_pat_ から始まる文字列）</label>
+        <input class="form-input" id="gas-url-input" type="password" placeholder="github_pat_XXXXXXXXXXXXXXXX..." autocomplete="off" style="font-size:12px;">
       </div>
       <div id="gas-url-current" style="font-size:12px;color:#27ae60;margin-top:8px;padding:8px;background:#f0fff4;border-radius:4px;display:none;">✅ 設定済み</div>
       <div style="background:#fffbea;border:1px solid #f0d060;border-radius:6px;padding:12px;margin-top:14px;">
-        <div style="font-size:12px;font-weight:700;color:#7a5f00;margin-bottom:6px;">📋 URLの取得方法</div>
+        <div style="font-size:12px;font-weight:700;color:#7a5f00;margin-bottom:6px;">📋 トークンとは？</div>
         <div style="font-size:11px;color:#7a5f00;line-height:1.9;">
-          ① Googleスプレッドシートを新規作成<br>
-          ② 「拡張機能」→「Apps Script」でコードを貼り付け<br>
-          ③ 「デプロイ」→「新しいデプロイ」→「ウェブアプリ」<br>
-          ④ 「アクセスできるユーザー」→「全員」に設定<br>
-          ⑤ 表示されたURLをここに貼り付け
+          GitHubが発行する「鍵」のようなもの。<br>
+          このトークンを持っている端末だけが、データを書き込めます。<br>
+          スタッフのスマホには「📱QRコード」で安全に配布できます。
         </div>
       </div>
     </div>
@@ -615,38 +613,41 @@ const GH_REPO='Kinyuki-jp/wakamiya-kanri';
 const GH_FILE='supporters.json';
 let ghSha='', syncDebounce=null;
 function openTokenModal(){
-  const existing=getGASUrl();
+  const existing=getGHToken();
   const cur=document.getElementById('gas-url-current');
-  if(existing){cur.style.display='block';cur.textContent='✅ 設定済み（...'+existing.slice(-20)+'）';}
+  if(existing){cur.style.display='block';cur.textContent='✅ 設定済み（末尾: ...'+existing.slice(-8)+'）';}
   else{cur.style.display='none';}
   document.getElementById('gas-url-input').value=existing||'';
   openModal('modal-token');
 }
 function saveGASUrlFromModal(){
   const v=document.getElementById('gas-url-input').value.trim();
-  if(!v){showToast('⚠️ URLを入力してください');return;}
-  if(!v.includes('script.google.com')){showToast('⚠️ Apps Script のURLではないようです');return;}
-  setGASUrl(v);
+  if(!v){showToast('⚠️ トークンを入力してください');return;}
+  if(!v.startsWith('github_pat_')&&!v.startsWith('ghp_')&&!v.startsWith('gho_')){
+    showToast('⚠️ GitHubトークンではないようです');return;
+  }
+  setGHToken(v);
   closeModal('modal-token');
-  showToast('✅ クラウドURLを保存しました。同期中…');
+  showToast('✅ トークンを保存しました。同期中…');
   updateTokenStatusDisplay();
-  syncFromGAS(true);
+  syncFromCloud(true);
+  pushToCloud();
 }
 function clearGASUrl(){
-  localStorage.removeItem(GAS_URL_KEY);
+  localStorage.removeItem(TOKEN_KEY);
   closeModal('modal-token');
-  showToast('🗑 クラウドURLを削除しました');
+  showToast('🗑 トークンを削除しました');
   updateTokenStatusDisplay();
 }
 function updateTokenStatusDisplay(){
   const el=document.getElementById('token-status-display');
   if(!el)return;
-  const u=getGASUrl();
-  if(u){
-    el.textContent='✅ クラウド同期 設定済み';
+  const t=getGHToken();
+  if(t){
+    el.textContent='✅ クラウド同期 設定済み（末尾: ...'+t.slice(-8)+'）';
     el.style.color='#27ae60'; el.style.background='#f0fff4';
   }else{
-    el.textContent='⚠️ 未設定 — URLを設定すると全端末で同期されます';
+    el.textContent='⚠️ 未設定 — トークンを設定すると全端末で同期されます';
     el.style.color='#c87d20'; el.style.background='#fffbea';
   }
   const sc=document.getElementById('settings-count');
@@ -659,11 +660,12 @@ const INIT_SUPPORTERS = [
 let supporters=[], schedules=[], currentMode='', calYear, calMonth, gCalYear, gCalMonth, deleteTargetId=null;
 
 /* ══════════════════════════════════════════════════
-   データ管理（ローカル + Google Apps Script クラウド同期）
+   データ管理（ローカル + GitHub クラウド同期）
    ══════════════════════════════════════════════════ */
-const GAS_URL_KEY='wk_gas_url';
-function getGASUrl(){return localStorage.getItem(GAS_URL_KEY)||'';}
-function setGASUrl(u){if(u)localStorage.setItem(GAS_URL_KEY,u.trim());}
+const TOKEN_KEY='wk_gh_token';
+function getGHToken(){return localStorage.getItem(TOKEN_KEY)||'';}
+function setGHToken(t){if(t)localStorage.setItem(TOKEN_KEY,t.trim());}
+let cloudSha='', cloudSyncDebounce=null, cloudSyncing=false;
 
 function loadData(){
   const s=localStorage.getItem('wk_supporters');
@@ -671,7 +673,7 @@ function loadData(){
   supporters=s?JSON.parse(s):JSON.parse(JSON.stringify(INIT_SUPPORTERS));
   schedules=sc?JSON.parse(sc):[];
   if(!s) localStorage.setItem('wk_supporters',JSON.stringify(supporters));
-  syncFromGAS(); // バックグラウンドでクラウドと同期
+  syncFromCloud(); // バックグラウンドでクラウドから取得
 }
 
 function saveData(){
@@ -679,7 +681,7 @@ function saveData(){
   localStorage.setItem('wk_schedules',JSON.stringify(schedules));
   const el=document.getElementById('topbar-count');
   if(el) el.textContent=supporters.length;
-  scheduleSyncToGAS();
+  scheduleSyncToCloud();
 }
 function saveDataAndToast(msg){saveData();showToast(msg||'✓ 保存しました');}
 
@@ -687,95 +689,110 @@ function saveDataAndToast(msg){saveData();showToast(msg||'✓ 保存しました
 function setSyncStatus(st){
   const el=document.getElementById('sync-status');
   if(!el)return;
-  const map={syncing:'⏳ 同期中…',synced:'✅ クラウド保存済',error:'⚠️ 同期失敗（端末に保存済）',offline:'📴 オフライン',nourl:'🔧 URL未設定'};
+  const map={syncing:'⏳ 同期中…',synced:'✅ クラウド保存済',error:'⚠️ 同期失敗（端末に保存済）',offline:'📴 オフライン',notoken:'🔧 トークン未設定'};
   el.textContent=map[st]||st;
   el.style.color=st==='synced'?'#27ae60':st==='syncing'?'#e67e22':'#c0392b';
 }
 
-/* ── GASからデータ読み込み（JSONP方式・認証不要） ── */
-function syncFromGAS(manual=false){
-  const url=getGASUrl();
-  if(!url){if(manual){setSyncStatus('nourl');showToast('⚠️ 設定 → Apps Script URLを登録してください');}return;}
+/* ── GitHub から読み込み（誰でも読める・認証不要） ── */
+async function syncFromCloud(manual=false){
   if(manual)setSyncStatus('syncing');
-  return new Promise((resolve)=>{
-    const cbName='gasCb_'+Date.now();
-    const timer=setTimeout(()=>{
-      delete window[cbName];
-      if(sc&&sc.parentNode)sc.parentNode.removeChild(sc);
-      setSyncStatus('offline'); resolve();
-    },12000);
-    window[cbName]=(data)=>{
-      clearTimeout(timer);
-      delete window[cbName];
-      if(sc&&sc.parentNode)sc.parentNode.removeChild(sc);
-      const remote=(data&&data.supporters)||[];
-      const localMap=new Map(supporters.map(s=>[s.id,s]));
-      let added=0;
-      remote.forEach(r=>{if(!localMap.has(r.id)){supporters.unshift(r);added++;}});
-      if(added>0){
-        supporters.sort((a,b)=>((b.created||'')>(a.created||'')?1:-1));
-        localStorage.setItem('wk_supporters',JSON.stringify(supporters));
-        const tc=document.getElementById('topbar-count');
-        if(tc)tc.textContent=supporters.length;
-        if(currentMode==='admin'){renderSupporters();renderDashboard();}
-        if(currentMode==='general'){renderGeneralHome();}
-        if(manual)showToast('✓ '+added+'名の新規データを取得しました（計'+supporters.length+'名）');
-      }else if(manual){showToast('✓ 最新状態です（'+supporters.length+'名）');}
-      setSyncStatus('synced'); resolve();
-    };
-    const sc=document.createElement('script');
-    sc.src=url+'?callback='+cbName+'&t='+Date.now();
-    sc.onerror=()=>{clearTimeout(timer);setSyncStatus('offline');resolve();};
-    document.body.appendChild(sc);
-  });
+  try{
+    const r=await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${GH_FILE}?t=${Date.now()}`);
+    if(!r.ok){if(manual)setSyncStatus('offline');return;}
+    const data=await r.json();
+    const remote=data.supporters||[];
+    const remoteSchedules=data.schedules||[];
+    const localIds=new Set(supporters.map(s=>s.id));
+    const newSupp=remote.filter(s=>!localIds.has(s.id));
+    const localSchedIds=new Set(schedules.map(x=>x.id));
+    const newSched=remoteSchedules.filter(x=>!localSchedIds.has(x.id));
+    let added=0;
+    if(newSupp.length>0){
+      supporters=[...newSupp,...supporters];
+      localStorage.setItem('wk_supporters',JSON.stringify(supporters));
+      added+=newSupp.length;
+    }
+    if(newSched.length>0){
+      schedules=[...newSched,...schedules];
+      localStorage.setItem('wk_schedules',JSON.stringify(schedules));
+    }
+    if(added>0){
+      const tc=document.getElementById('topbar-count');
+      if(tc)tc.textContent=supporters.length;
+      if(currentMode==='admin'){renderSupporters();renderDashboard();if(typeof renderCalendar==='function')renderCalendar();}
+      if(currentMode==='general'){renderGeneralHome();if(typeof renderGeneralCalendar==='function')renderGeneralCalendar();}
+      if(manual)showToast('✓ '+added+'名の新規データを取得しました（計'+supporters.length+'名）');
+    }else if(manual){showToast('✓ 最新状態です（'+supporters.length+'名）');}
+    setSyncStatus('synced');
+  }catch(e){if(manual)setSyncStatus('offline');}
 }
 
-/* ── GASへデータ保存（no-cors POST・認証はシークレットキー） ── */
-let gasSyncDebounce=null;
-function scheduleSyncToGAS(){
-  if(gasSyncDebounce)clearTimeout(gasSyncDebounce);
-  gasSyncDebounce=setTimeout(pushToGAS,1500);
+/* ── GitHub へ書き込み ── */
+function scheduleSyncToCloud(){
+  if(cloudSyncDebounce)clearTimeout(cloudSyncDebounce);
+  cloudSyncDebounce=setTimeout(pushToCloud,1800);
 }
 
-async function pushToGAS(action='sync_all'){
-  const url=getGASUrl();
-  if(!url){setSyncStatus('nourl');return;}
+async function pushToCloud(){
+  const token=getGHToken();
+  if(!token){setSyncStatus('notoken');return;}
+  if(cloudSyncing){scheduleSyncToCloud();return;} // 既に同期中なら後で再試行
+  cloudSyncing=true;
   setSyncStatus('syncing');
   try{
-    await fetch(url,{
-      method:'POST',
-      mode:'no-cors',
-      body:JSON.stringify({secret:'wakamiya2025',action:action,supporters:supporters,schedules:schedules})
+    const h={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+    // 最新SHA取得
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}?t=${Date.now()}`,{headers:h,cache:'no-store'});
+    if(!r.ok){setSyncStatus('error');cloudSyncing=false;return;}
+    const fd=await r.json();
+    const sha=fd.sha;
+    // リモートデータをマージしてから書き込み（競合防止）
+    let remoteContent=null;
+    try{
+      const remoteRaw=fd.content?atob(fd.content.replace(/\n/g,'')):'';
+      remoteContent=JSON.parse(decodeURIComponent(escape(remoteRaw)));
+    }catch(e){remoteContent={supporters:[],schedules:[]};}
+    const remoteSuppIds=new Set((remoteContent.supporters||[]).map(s=>s.id));
+    const remoteSchedIds=new Set((remoteContent.schedules||[]).map(s=>s.id));
+    const mergedSupp=[...supporters,...(remoteContent.supporters||[]).filter(s=>!supporters.some(l=>l.id===s.id))];
+    const mergedSched=[...schedules,...(remoteContent.schedules||[]).filter(s=>!schedules.some(l=>l.id===s.id))];
+    // 自分にあってリモートにあるものは保持（削除はリモート優先しない＝最新書込が勝つ）
+    const payload={version:2,updated:new Date().toISOString(),supporters:mergedSupp,schedules:mergedSched};
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
+    const pr=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`,{
+      method:'PUT',headers:{...h,'Content-Type':'application/json'},
+      body:JSON.stringify({message:`Sync supporters (${mergedSupp.length}名)`,content,sha})
     });
-    setSyncStatus('synced');
+    if(pr.ok){
+      const pj=await pr.json();
+      cloudSha=pj.content?.sha||sha;
+      // ローカルもマージ済みデータに更新
+      if(mergedSupp.length!==supporters.length){
+        supporters=mergedSupp;
+        localStorage.setItem('wk_supporters',JSON.stringify(supporters));
+      }
+      if(mergedSched.length!==schedules.length){
+        schedules=mergedSched;
+        localStorage.setItem('wk_schedules',JSON.stringify(schedules));
+      }
+      setSyncStatus('synced');
+    }else if(pr.status===409){
+      // SHA競合：再試行
+      setTimeout(()=>{cloudSyncing=false;pushToCloud();},1000);
+      return;
+    }else{
+      setSyncStatus('error');
+    }
   }catch(e){setSyncStatus('error');}
+  cloudSyncing=false;
 }
 
-/* ── 単一支援者をGASに追加（登録直後に即時保存） ── */
-async function pushOneToGAS(supporter){
-  const url=getGASUrl();
-  if(!url)return;
-  try{
-    await fetch(url,{
-      method:'POST',
-      mode:'no-cors',
-      body:JSON.stringify({secret:'wakamiya2025',action:'add',supporter:supporter})
-    });
-  }catch(e){/* silent */}
-}
-
-/* ── 単一支援者削除をGASに反映 ── */
-async function deleteOneFromGAS(id){
-  const url=getGASUrl();
-  if(!url)return;
-  try{
-    await fetch(url,{
-      method:'POST',
-      mode:'no-cors',
-      body:JSON.stringify({secret:'wakamiya2025',action:'delete',id:id})
-    });
-  }catch(e){/* silent */}
-}
+// 互換のため旧名も残す
+const syncFromGAS=syncFromCloud;
+const pushToGAS=pushToCloud;
+const pushOneToGAS=function(s){scheduleSyncToCloud();};
+const deleteOneFromGAS=function(id){scheduleSyncToCloud();};
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -999,10 +1016,9 @@ function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt
 // URLパラメータで自動設定（スタッフが共有リンクを開いたとき）
 (function(){
   const p=new URLSearchParams(window.location.search);
-  const gasParam=p.get('gas');
-  if(gasParam){
-    setGASUrl(decodeURIComponent(gasParam));
-    // URLをきれいにする（パラメータを消す）
+  const tokenParam=p.get('token');
+  if(tokenParam){
+    setGHToken(decodeURIComponent(tokenParam));
     history.replaceState({},'',window.location.pathname);
     setTimeout(()=>showToast('✅ クラウド同期の設定が完了しました！'),600);
   }
@@ -1021,7 +1037,7 @@ else if(savedMode==='general')enterGeneral();
    ══════════════════════════════════════ */
 setInterval(function(){
   if(currentMode==='admin'||currentMode==='general'){
-    syncFromGAS(false); // silentモード（トーストなし）
+    syncFromCloud(false); // silentモード（トーストなし）
   }
 },30000);
 
@@ -1029,13 +1045,13 @@ setInterval(function(){
    スタッフ用セットアップリンク・QRコード生成
    ══════════════════════════════════════ */
 function generateStaffSetupLink(){
-  const url=getGASUrl();
-  if(!url){
-    showToast('⚠️ まずクラウドURLを設定してください');
+  const token=getGHToken();
+  if(!token){
+    showToast('⚠️ まずクラウドトークンを設定してください');
     return '';
   }
   const base=window.location.origin+window.location.pathname;
-  return base+'?gas='+encodeURIComponent(url);
+  return base+'?token='+encodeURIComponent(token);
 }
 
 function copyStaffLink(){
