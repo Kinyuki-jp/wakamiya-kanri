@@ -699,13 +699,31 @@ function setSyncStatus(st){
   el.style.color=st==='synced'?'#27ae60':st==='syncing'?'#e67e22':'#c0392b';
 }
 
-/* ── GitHub から読み込み（誰でも読める・認証不要） ── */
+/* ── GitHub から読み込み（API経由・キャッシュなし・即時反映） ── */
 async function syncFromCloud(manual=false){
   if(manual)setSyncStatus('syncing');
   try{
-    const r=await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${GH_FILE}?t=${Date.now()}`);
-    if(!r.ok){if(manual)setSyncStatus('offline');return;}
-    const data=await r.json();
+    const token=getGHToken();
+    let data=null;
+    if(token){
+      // 認証ありAPI経由（CDNキャッシュなし・即時反映）
+      const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}?t=${Date.now()}`,{
+        headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},
+        cache:'no-store'
+      });
+      if(!r.ok){if(manual){setSyncStatus('error');showToast('⚠️ 読み取り失敗: '+r.status);}return;}
+      const fd=await r.json();
+      try{
+        const decoded=decodeURIComponent(escape(atob(fd.content.replace(/\n/g,''))));
+        data=JSON.parse(decoded);
+        cloudSha=fd.sha;
+      }catch(e){if(manual)setSyncStatus('error');return;}
+    }else{
+      // フォールバック：認証なし（CDNキャッシュあり・遅延あり）
+      const r=await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${GH_FILE}?t=${Date.now()}`,{cache:'no-store'});
+      if(!r.ok){if(manual)setSyncStatus('offline');return;}
+      data=await r.json();
+    }
     const remote=data.supporters||[];
     const remoteSchedules=data.schedules||[];
     const localIds=new Set(supporters.map(s=>s.id));
@@ -726,11 +744,14 @@ async function syncFromCloud(manual=false){
       const tc=document.getElementById('topbar-count');
       if(tc)tc.textContent=supporters.length;
       if(currentMode==='admin'){renderSupporters();renderDashboard();if(typeof renderCalendar==='function')renderCalendar();}
-      if(currentMode==='general'){renderGeneralHome();if(typeof renderGeneralCalendar==='function')renderGeneralCalendar();}
+      if(currentMode==='general'){if(typeof renderGeneralHome==='function')renderGeneralHome();if(typeof renderGeneralCalendar==='function')renderGeneralCalendar();}
       if(manual)showToast('✓ '+added+'名の新規データを取得しました（計'+supporters.length+'名）');
     }else if(manual){showToast('✓ 最新状態です（'+supporters.length+'名）');}
     setSyncStatus('synced');
-  }catch(e){if(manual)setSyncStatus('offline');}
+  }catch(e){
+    if(manual){setSyncStatus('error');showToast('⚠️ 同期エラー: '+(e.message||e));}
+    console.error('Sync error:',e);
+  }
 }
 
 /* ── GitHub へ書き込み ── */
@@ -906,7 +927,13 @@ function renderGeneralHome(){
   document.getElementById('g-total').textContent=supporters.length;
   document.getElementById('g-ojibo').textContent=supporters.filter(s=>s.area==='王子保地区').length;
   const list=document.getElementById('g-supporter-list'); list.innerHTML='';
-  if(!supporters.length){list.innerHTML='<div class="empty"><div class="empty-icon">👥</div>まだ支援者が登録されていません</div>';return;}
+  // 「最新の情報を取得」ボタンと同期ステータス
+  const refreshHtml=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:8px 12px;background:#f5f9fa;border-radius:6px;">
+    <span style="font-size:11px;color:#888;" id="g-sync-msg">合計 ${supporters.length}名</span>
+    <button onclick="syncFromCloud(true)" style="background:var(--asagi);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔄 最新を取得</button>
+  </div>`;
+  list.innerHTML=refreshHtml;
+  if(!supporters.length){list.insertAdjacentHTML('beforeend','<div class="empty"><div class="empty-icon">👥</div>まだ支援者が登録されていません</div>');return;}
   supporters.forEach(s=>{const card=document.createElement('div');card.className='supporter-card';const init=s.name?s.name[0]:'？';card.innerHTML=`<div class="supporter-card-avatar">${init}</div><div><div class="supporter-card-name">${escHtml(s.name)}</div><div class="supporter-card-area">${escHtml(s.area||'')}</div></div>`;list.appendChild(card);});
 }
 function renderGeneralCalendar(){
@@ -1044,7 +1071,19 @@ setInterval(function(){
   if(currentMode==='admin'||currentMode==='general'){
     syncFromCloud(false); // silentモード（トーストなし）
   }
-},30000);
+},15000); // 15秒ごと
+
+// 画面が再アクティブになった時も即同期（タブ切り替え時など）
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden&&(currentMode==='admin'||currentMode==='general')){
+    syncFromCloud(false);
+  }
+});
+window.addEventListener('focus',function(){
+  if(currentMode==='admin'||currentMode==='general'){
+    syncFromCloud(false);
+  }
+});
 
 /* ══════════════════════════════════════
    スタッフ用セットアップリンク・QRコード生成
