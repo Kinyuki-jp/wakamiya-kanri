@@ -286,22 +286,13 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
     </div>
   </div>
   <div class="g-tabs">
-    <div class="g-tab active" onclick="gShowTab('home',this)">🏠 ホーム</div>
-    <div class="g-tab" onclick="gShowTab('register',this)">📝 支援者登録</div>
+    <div class="g-tab active" onclick="gShowTab('register',this)">📝 支援者登録</div>
     <div class="g-tab" onclick="gShowTab('activity',this)">📅 活動記録</div>
     <div class="g-tab" onclick="gShowTab('policy',this)">🏹 ビジョン・想い</div>
     <div class="g-tab" style="margin-left:auto;" onclick="logoutToLock()">← 戻る</div>
   </div>
   <div class="g-content">
-    <div id="g-tab-home" class="g-page active">
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px;">
-        <div class="stat-card"><div class="stat-num" id="g-total">0</div><div class="stat-label">総支援者数</div></div>
-        <div class="stat-card highlight"><div class="stat-num" id="g-ojibo">0</div><div class="stat-label">王子保地区</div></div>
-      </div>
-      <div class="section-title">支援者一覧（お名前）</div>
-      <div class="supporter-list" id="g-supporter-list"></div>
-    </div>
-    <div id="g-tab-register" class="g-page">
+    <div id="g-tab-register" class="g-page active">
       <div class="reg-form-card">
         <div class="reg-form-title">📝 支援者登録フォーム</div>
         <div style="margin-bottom:16px;"><label class="reg-form-label">お名前 *</label><input class="reg-form-input" id="g-reg-name" type="text" placeholder="例：山田 太郎"></div>
@@ -747,7 +738,7 @@ async function syncFromCloud(manual=false){
       const tc=document.getElementById('topbar-count');
       if(tc)tc.textContent=supporters.length;
       if(currentMode==='admin'){renderSupporters();renderDashboard();if(typeof renderCalendar==='function')renderCalendar();}
-      if(currentMode==='general'){if(typeof renderGeneralHome==='function')renderGeneralHome();if(typeof renderGeneralCalendar==='function')renderGeneralCalendar();}
+      if(currentMode==='general'){if(typeof renderGeneralCalendar==='function')renderGeneralCalendar();}
       if(manual)showToast('✓ '+added+'名の新規データを取得しました（計'+supporters.length+'名）');
     }else if(manual){showToast('✓ 最新状態です（'+supporters.length+'名）');}
     setSyncStatus('synced');
@@ -921,7 +912,7 @@ function showAdminPw(){document.getElementById('lock-mode-select').style.display
 function loginAdmin(){const pw=document.getElementById('pw-input').value;if(pw===ADMIN_PASSWORD){document.getElementById('lock-error').style.display='none';enterAdmin();}else{document.getElementById('lock-error').style.display='block';document.getElementById('pw-input').value='';}}
 function loginGeneral(){enterGeneral();}
 function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';const tc=document.getElementById('topbar-count');if(tc)tc.textContent=supporters.length;renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
-function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';renderGeneralHome();const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
+function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
 function logoutToLock(){sessionStorage.removeItem('wk_mode');currentMode='';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('lock-screen').style.display='flex';showModeSelect();}
 
 /* ── GENERAL ── */
@@ -997,8 +988,7 @@ function generalRegister(){
   supporters.unshift({id:Date.now().toString(),name,area:document.getElementById('g-reg-area').value,tel:document.getElementById('g-reg-tel').value.trim(),relation:'一般登録',level:'支持者',note:document.getElementById('g-reg-note').value.trim(),email:'',age:'',gender:'',addr:'',created:new Date().toISOString()});
   saveData();
   document.getElementById('g-reg-name').value='';document.getElementById('g-reg-tel').value='';document.getElementById('g-reg-note').value='';
-  renderGeneralHome(); showToast('✓ 登録しました！ありがとうございます');
-  gShowTab('home',document.querySelectorAll('.g-tab')[0]);
+  showToast('✓ 登録しました！ありがとうございます');
 }
 
 /* ── ADMIN ── */
