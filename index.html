@@ -359,6 +359,185 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
   .nav-item { padding: 8px 2px; }
   .nav-icon { font-size: 18px; }
 }
+
+/* =====================================================
+   ✨ ビジュアル洗練レイヤー（全画面サイズ共通）
+   ===================================================== */
+
+/* ボタン：モダンな角丸 + タップフィードバック */
+.btn {
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  box-shadow: 0 2px 6px rgba(0,138,150,0.25);
+}
+.btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(0,138,150,0.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  box-shadow: 0 1px 3px rgba(0,138,150,0.25);
+  transform: scale(0.97) translateY(0);
+}
+.btn-danger, .btn-edit, .btn-outline { border-radius: 6px; }
+.btn-excel { border-radius: 8px; box-shadow: 0 2px 6px rgba(33,115,70,0.25); }
+
+/* カード：陰影で立体感 */
+.stat-card {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+.stat-card.highlight {
+  background: linear-gradient(135deg, rgba(0,138,150,0.06) 0%, rgba(0,138,150,0.02) 100%);
+}
+
+/* テーブル：縞模様 + 余白改善 */
+tbody tr:nth-child(even) { background: rgba(0,163,175,0.015); }
+tbody tr:hover { background: #f0fbfc; }
+.table-wrap { border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+/* バッジ：角丸 */
+.badge { border-radius: 4px; }
+
+/* フォーム入力：フォーカス時に発光 */
+.form-input, .form-select, .form-textarea, .search-input, .reg-form-input, .reg-form-textarea {
+  border-radius: 6px;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus,
+.search-input:focus, .reg-form-input:focus, .reg-form-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(0,138,150,0.12);
+}
+
+/* モーダル：影でフロート感 */
+.modal {
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+/* トースト：固定位置を改善 */
+#toast {
+  bottom: 88px !important; /* 下部ナビと被らない */
+}
+
+/* スケジュールアイテム：角丸＋影 */
+.schedule-item {
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s;
+}
+.schedule-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+/* 支援者カード：角丸＋ホバー */
+.supporter-card {
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.supporter-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* カレンダーセル：角丸 */
+.cal-cell { border-radius: 6px; }
+.cal-event {
+  border-radius: 4px;
+  transition: transform 0.15s;
+}
+.cal-event:hover { transform: scale(1.03); }
+
+/* 入力フォームカード：角丸＋影 */
+.reg-form-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ロック画面：スマホで縦並びを改善 */
+@media (max-width: 640px) {
+  .lock-left { padding: 40px 24px 28px; }
+  .lock-right { padding: 28px 24px 40px; min-height: auto; }
+  .lock-photo-ring { width: 130px; height: 130px; margin-bottom: 20px; }
+  .lock-name-ja { font-size: 28px; margin-bottom: 6px; }
+  .lock-slogan { font-size: 13px; padding-top: 16px; }
+  .lock-btn-general { padding: 18px 20px; font-size: 15px; min-height: 56px; }
+  .lock-btn-admin { padding: 14px 20px; font-size: 13px; min-height: 48px; }
+  .lock-pw-input { padding: 16px; font-size: 16px; min-height: 50px; }
+  .lock-pw-submit { padding: 16px; font-size: 14px; min-height: 50px; }
+}
+
+/* スクロールバー：細く控えめに */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(0,138,150,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,138,150,0.5); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* タップハイライト無効化（iOSの青い四角を消す） */
+* { -webkit-tap-highlight-color: transparent; }
+.nav-item, .g-tab, button { -webkit-tap-highlight-color: transparent; }
+
+/* アクティブ状態のフィードバック強化 */
+.nav-item:active { background: rgba(0,163,175,0.18); }
+.g-tab:active { background: rgba(0,163,175,0.06); }
+.supporter-card:active { transform: scale(0.99); }
+
+/* ロード時のフェードイン */
+.page.active {
+  animation: fadeIn 0.25s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* セクションタイトル：装飾線を洗練 */
+.section-title {
+  position: relative;
+  padding-left: 14px;
+}
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 4px; height: 60%;
+  background: var(--asagi);
+  border-radius: 2px;
+}
+
+/* 同期ステータス：パルス効果 */
+#sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s;
+}
+
+/* 改良された empty state */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+.empty-icon { font-size: 48px; opacity: 0.4; margin-bottom: 12px; }
+
+/* iPhone X以降のセーフエリア対応 */
+@supports (padding: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    .main { margin-bottom: calc(70px + env(safe-area-inset-bottom)); }
+    #toast { bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
+  }
+}
 </style>
 </head>
 <body>
