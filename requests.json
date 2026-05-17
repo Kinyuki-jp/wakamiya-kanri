@@ -1,5 +1,16 @@
 {
   "version": 1,
-  "updated": "2026-05-17T00:00:00Z",
-  "requests": []
+  "updated": "2026-05-17T05:35:19.826Z",
+  "requests": [
+    {
+      "id": "1778996119324-gaguvx",
+      "category": "政策提案",
+      "content": "若宮さんかっこいい",
+      "name": "大友勤之",
+      "contact": "mriclz@icloud.com",
+      "status": "unread",
+      "created": "2026-05-17T05:35:19.324Z",
+      "updated": "2026-05-17T05:35:19.324Z"
+    }
+  ]
 }
