@@ -582,6 +582,7 @@ tbody tr:hover { background: #f0fbfc; }
   </div>
   <div class="g-tabs">
     <div class="g-tab active" onclick="gShowTab('register',this)">📝 支援者登録</div>
+    <div class="g-tab" onclick="gShowTab('voice',this)">💬 ご意見・要望</div>
     <div class="g-tab" onclick="gShowTab('activity',this)">📅 活動記録</div>
     <div class="g-tab" onclick="gShowTab('policy',this)">🏹 ビジョン・想い</div>
     <div class="g-tab" style="margin-left:auto;" onclick="logoutToLock()">← 戻る</div>
@@ -595,6 +596,43 @@ tbody tr:hover { background: #f0fbfc; }
         <div style="margin-bottom:16px;"><label class="reg-form-label">電話番号（任意）</label><input class="reg-form-input" id="g-reg-tel" type="tel" placeholder="090-0000-0000"><div class="reg-note">※ 電話番号は管理者のみが確認できます</div></div>
         <div style="margin-bottom:16px;"><label class="reg-form-label">きっかけ・一言（任意）</label><textarea class="reg-form-textarea" id="g-reg-note" placeholder="応援メッセージなど…"></textarea></div>
         <button class="reg-form-submit" onclick="generalRegister()">登録する</button>
+      </div>
+    </div>
+    <div id="g-tab-voice" class="g-page">
+      <div class="reg-form-card">
+        <div class="reg-form-title">💬 若宮こういちへの<br>ご意見・ご要望</div>
+        <p style="font-size:13px;color:#666;line-height:1.8;margin-bottom:20px;">越前市政や若宮こういちの活動について、ご意見・ご要望をお寄せください。いただいた声は本人と後援会スタッフのみが拝見します。<br><strong>他の方には公開されません。</strong></p>
+        <div style="margin-bottom:16px;">
+          <label class="reg-form-label">カテゴリ <span style="color:var(--danger);">*</span></label>
+          <select class="reg-form-select" id="g-voice-category">
+            <option value="">— 選択してください —</option>
+            <option value="政策提案">政策提案</option>
+            <option value="地域の課題">地域の課題</option>
+            <option value="活動への質問">活動への質問</option>
+            <option value="応援メッセージ">応援メッセージ</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="reg-form-label">ご意見・ご要望の内容 <span style="color:var(--danger);">*</span></label>
+          <textarea class="reg-form-textarea" id="g-voice-content" placeholder="自由にご記入ください…" style="min-height:140px;"></textarea>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="reg-form-label">お名前（任意）</label>
+          <input class="reg-form-input" id="g-voice-name" type="text" placeholder="例：山田 太郎">
+          <div class="reg-note">※ 匿名でも送信できます</div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="reg-form-label">ご連絡先（任意）</label>
+          <input class="reg-form-input" id="g-voice-contact" type="text" placeholder="メールまたは電話番号（返信を希望される場合）">
+          <div class="reg-note">※ 返信を希望される方のみ記入してください</div>
+        </div>
+        <button class="reg-form-submit" onclick="generalSubmitVoice()">送信する</button>
+        <div id="g-voice-thanks" style="display:none;margin-top:20px;padding:18px;background:#f0fff4;border:1px solid #27ae60;border-radius:8px;text-align:center;">
+          <div style="font-size:30px;margin-bottom:8px;">🙏</div>
+          <div style="font-size:15px;font-weight:700;color:#27ae60;margin-bottom:4px;">送信ありがとうございました</div>
+          <div style="font-size:13px;color:#555;">いただいたご意見は若宮本人と後援会スタッフが拝見いたします。</div>
+        </div>
       </div>
     </div>
     <div id="g-tab-activity" class="g-page">
@@ -715,6 +753,7 @@ tbody tr:hover { background: #f0fbfc; }
       <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span><span>ダッシュボード</span></div>
       <div class="nav-item" onclick="showPage('supporters',this)"><span class="nav-icon">👥</span><span>支援者名簿</span></div>
       <div class="nav-item" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span><span>スケジュール</span></div>
+      <div class="nav-item" onclick="showPage('voices',this)"><span class="nav-icon">💬</span><span>ご意見</span><span id="voices-badge" style="display:none;background:#cc3333;color:#fff;font-size:9px;padding:2px 6px;border-radius:8px;margin-left:auto;"></span></div>
       <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span><span>設定</span></div>
     </nav>
     <div class="sidebar-footer">
@@ -769,6 +808,35 @@ tbody tr:hover { background: #f0fbfc; }
         <div class="cal-grid" id="cal-grid"></div>
         <div class="section-title">スケジュール一覧</div>
         <div id="schedule-list"></div>
+      </div>
+
+      <div id="page-voices" class="page">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+          <div class="section-title" style="margin:0;">💬 ご意見・ご要望一覧</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="voice-filter-category" onchange="renderVoices()" style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px;">
+              <option value="">全カテゴリ</option>
+              <option value="政策提案">政策提案</option>
+              <option value="地域の課題">地域の課題</option>
+              <option value="活動への質問">活動への質問</option>
+              <option value="応援メッセージ">応援メッセージ</option>
+              <option value="その他">その他</option>
+            </select>
+            <select id="voice-filter-status" onchange="renderVoices()" style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:13px;">
+              <option value="">すべて</option>
+              <option value="unread">未読</option>
+              <option value="read">既読</option>
+              <option value="done">対応済み</option>
+            </select>
+            <button class="btn btn-outline" onclick="syncFromCloud(true)">🔄 更新</button>
+          </div>
+        </div>
+        <div id="voices-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+          <div class="stat-card"><div class="stat-num" id="v-stat-total">0</div><div class="stat-label">総件数</div></div>
+          <div class="stat-card highlight"><div class="stat-num" id="v-stat-unread">0</div><div class="stat-label">未読</div></div>
+          <div class="stat-card"><div class="stat-num" id="v-stat-done">0</div><div class="stat-label">対応済み</div></div>
+        </div>
+        <div id="voices-list"></div>
       </div>
 
       <div id="page-settings" class="page">
@@ -884,6 +952,14 @@ tbody tr:hover { background: #f0fbfc; }
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-voice-detail">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head"><div class="modal-title">💬 ご意見の詳細</div><button class="modal-close" onclick="closeModal('modal-voice-detail')">✕</button></div>
+    <div class="modal-body" id="voice-detail-body"></div>
+    <div class="modal-foot" id="voice-detail-foot"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-delete">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head"><div class="modal-title">削除の確認</div><button class="modal-close" onclick="closeModal('modal-delete')">✕</button></div>
@@ -943,7 +1019,9 @@ const INIT_SUPPORTERS = [
   {id:'1000000000001',name:'大友勤之',area:'王子保地区',tel:'080-9899-2659',relation:'知人',level:'協力者',note:'',email:'',age:'',gender:'',addr:'',created:'2025-05-11T00:00:00.000Z'},
   {id:'1000000000002',name:'土持',area:'その他',tel:'080-3971-9995',relation:'紹介',level:'協力者',note:'',email:'',age:'',gender:'',addr:'',created:'2025-05-11T00:00:00.000Z'},
 ];
-let supporters=[], schedules=[], currentMode='', calYear, calMonth, gCalYear, gCalMonth, deleteTargetId=null;
+let supporters=[], schedules=[], requests=[], currentMode='', calYear, calMonth, gCalYear, gCalMonth, deleteTargetId=null;
+const REQUESTS_FILE='requests.json';
+let requestsSha='', requestsSyncDebounce=null;
 
 /* ══════════════════════════════════════════════════
    データ管理（ローカル + GitHub クラウド同期）
@@ -964,10 +1042,13 @@ let cloudSha='', cloudSyncDebounce=null, cloudSyncing=false;
 function loadData(){
   const s=localStorage.getItem('wk_supporters');
   const sc=localStorage.getItem('wk_schedules');
+  const r=localStorage.getItem('wk_requests');
   supporters=s?JSON.parse(s):JSON.parse(JSON.stringify(INIT_SUPPORTERS));
   schedules=sc?JSON.parse(sc):[];
+  requests=r?JSON.parse(r):[];
   if(!s) localStorage.setItem('wk_supporters',JSON.stringify(supporters));
   syncFromCloud(); // バックグラウンドでクラウドから取得
+  syncRequestsFromCloud(); // 要望データも取得
 }
 
 function saveData(){
@@ -1108,6 +1189,256 @@ const syncFromGAS=syncFromCloud;
 const pushToGAS=pushToCloud;
 const pushOneToGAS=function(s){scheduleSyncToCloud();};
 const deleteOneFromGAS=function(id){scheduleSyncToCloud();};
+
+/* ══════════════════════════════════════════════════
+   ご意見・要望のクラウド同期
+   ══════════════════════════════════════════════════ */
+async function syncRequestsFromCloud(manual=false){
+  try{
+    const token=getGHToken();
+    let data=null;
+    if(token){
+      const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${REQUESTS_FILE}?t=${Date.now()}`,{
+        headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},
+        cache:'no-store'
+      });
+      if(!r.ok){if(manual)showToast('⚠️ 要望データ取得失敗');return;}
+      const fd=await r.json();
+      try{
+        const decoded=decodeURIComponent(escape(atob(fd.content.replace(/\n/g,''))));
+        data=JSON.parse(decoded);
+        requestsSha=fd.sha;
+      }catch(e){return;}
+    }else{
+      const r=await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/${REQUESTS_FILE}?t=${Date.now()}`,{cache:'no-store'});
+      if(!r.ok)return;
+      data=await r.json();
+    }
+    const remote=data.requests||[];
+    const localIds=new Set(requests.map(x=>x.id));
+    const newItems=remote.filter(x=>!localIds.has(x.id));
+    let added=0;
+    if(newItems.length>0){
+      requests=[...newItems,...requests];
+      localStorage.setItem('wk_requests',JSON.stringify(requests));
+      added=newItems.length;
+    }
+    // 既存項目のstatusも更新（管理者の操作を反映）
+    const remoteMap=new Map(remote.map(x=>[x.id,x]));
+    let updated=false;
+    requests.forEach((r,i)=>{
+      const remoteR=remoteMap.get(r.id);
+      if(remoteR && remoteR.updated && remoteR.updated!==r.updated){
+        requests[i]=remoteR; updated=true;
+      }
+    });
+    if(updated)localStorage.setItem('wk_requests',JSON.stringify(requests));
+    if(currentMode==='admin')renderVoices();
+    updateVoicesBadge();
+    if(manual)showToast('✓ 要望データを更新（'+requests.length+'件）');
+  }catch(e){console.error('Request sync error:',e);}
+}
+
+async function pushRequestsToCloud(){
+  const token=getGHToken();
+  if(!token)return;
+  try{
+    const h={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${REQUESTS_FILE}?t=${Date.now()}`,{headers:h,cache:'no-store'});
+    if(!r.ok)return;
+    const fd=await r.json();
+    const sha=fd.sha;
+    // リモートとマージ
+    let remoteRequests=[];
+    try{
+      const remoteRaw=fd.content?atob(fd.content.replace(/\n/g,'')):'';
+      const remoteData=JSON.parse(decodeURIComponent(escape(remoteRaw)));
+      remoteRequests=remoteData.requests||[];
+    }catch(e){}
+    // ローカルにある全て + リモートのうちローカルにないもの
+    const localIds=new Set(requests.map(x=>x.id));
+    const merged=[...requests,...remoteRequests.filter(x=>!localIds.has(x.id))];
+    const payload={version:1,updated:new Date().toISOString(),requests:merged};
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
+    const pr=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${REQUESTS_FILE}`,{
+      method:'PUT',headers:{...h,'Content-Type':'application/json'},
+      body:JSON.stringify({message:`Update requests (${merged.length}件）`,content,sha})
+    });
+    if(pr.ok){
+      const pj=await pr.json();
+      requestsSha=pj.content?.sha||sha;
+      if(merged.length!==requests.length){
+        requests=merged;
+        localStorage.setItem('wk_requests',JSON.stringify(requests));
+      }
+    }
+  }catch(e){console.error('Push requests error:',e);}
+}
+
+/* 単発の要望追加（一般ユーザーから） */
+async function addRequest(req){
+  // ローカルに即保存
+  requests.unshift(req);
+  localStorage.setItem('wk_requests',JSON.stringify(requests));
+  // GitHubに保存
+  await pushRequestsToCloud();
+}
+
+/* 要望のステータス更新（管理者から） */
+async function updateRequestStatus(id,status){
+  const idx=requests.findIndex(r=>r.id===id);
+  if(idx<0)return;
+  requests[idx].status=status;
+  requests[idx].updated=new Date().toISOString();
+  localStorage.setItem('wk_requests',JSON.stringify(requests));
+  await pushRequestsToCloud();
+  renderVoices();
+  updateVoicesBadge();
+}
+
+/* 要望の削除（管理者のみ） */
+async function deleteRequest(id){
+  if(!confirm('このご意見を削除しますか？\nこの操作は元に戻せません。'))return;
+  requests=requests.filter(r=>r.id!==id);
+  localStorage.setItem('wk_requests',JSON.stringify(requests));
+  await pushRequestsToCloud();
+  closeModal('modal-voice-detail');
+  renderVoices();
+  updateVoicesBadge();
+  showToast('✓ 削除しました');
+}
+
+/* 未読バッジ更新 */
+function updateVoicesBadge(){
+  const badge=document.getElementById('voices-badge');
+  if(!badge)return;
+  const unread=requests.filter(r=>!r.status||r.status==='unread').length;
+  if(unread>0){
+    badge.style.display='inline-block';
+    badge.textContent=unread>99?'99+':unread;
+  }else{
+    badge.style.display='none';
+  }
+}
+
+/* 一般ユーザーからの送信 */
+async function generalSubmitVoice(){
+  const category=document.getElementById('g-voice-category').value;
+  const content=document.getElementById('g-voice-content').value.trim();
+  const name=document.getElementById('g-voice-name').value.trim();
+  const contact=document.getElementById('g-voice-contact').value.trim();
+  if(!category){alert('カテゴリを選択してください');return;}
+  if(!content){alert('内容を入力してください');return;}
+  const req={
+    id:String(Date.now())+'-'+Math.random().toString(36).substr(2,6),
+    category:category,
+    content:content.substring(0,2000),
+    name:name.substring(0,50),
+    contact:contact.substring(0,100),
+    status:'unread',
+    created:new Date().toISOString(),
+    updated:new Date().toISOString()
+  };
+  await addRequest(req);
+  // フォームをリセット
+  document.getElementById('g-voice-category').value='';
+  document.getElementById('g-voice-content').value='';
+  document.getElementById('g-voice-name').value='';
+  document.getElementById('g-voice-contact').value='';
+  // お礼メッセージ表示
+  document.getElementById('g-voice-thanks').style.display='block';
+  setTimeout(()=>{document.getElementById('g-voice-thanks').style.display='none';},6000);
+  showToast('🙏 送信完了。ありがとうございました');
+}
+
+/* 管理画面：要望一覧表示 */
+function renderVoices(){
+  const total=requests.length;
+  const unread=requests.filter(r=>!r.status||r.status==='unread').length;
+  const done=requests.filter(r=>r.status==='done').length;
+  const elT=document.getElementById('v-stat-total');if(elT)elT.textContent=total;
+  const elU=document.getElementById('v-stat-unread');if(elU)elU.textContent=unread;
+  const elD=document.getElementById('v-stat-done');if(elD)elD.textContent=done;
+
+  const list=document.getElementById('voices-list');
+  if(!list)return;
+  const cat=document.getElementById('voice-filter-category').value;
+  const st=document.getElementById('voice-filter-status').value;
+  let filtered=requests.slice();
+  if(cat)filtered=filtered.filter(r=>r.category===cat);
+  if(st)filtered=filtered.filter(r=>(r.status||'unread')===st);
+  filtered.sort((a,b)=>(b.created||'')<(a.created||'')?-1:1);
+
+  if(!filtered.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">💬</div>該当するご意見はありません</div>';
+    return;
+  }
+  list.innerHTML='';
+  filtered.forEach(r=>{
+    const d=r.created?new Date(r.created):null;
+    const ds=d?`${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`:'-';
+    const status=r.status||'unread';
+    const statusBadge=status==='done'?'<span class="badge badge-done">対応済み</span>':
+                       status==='read'?'<span class="badge badge-b">既読</span>':
+                       '<span class="badge" style="background:#c0392b;color:#fff;">未読</span>';
+    const card=document.createElement('div');
+    card.className='schedule-item';
+    card.style.cssText='display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;cursor:pointer;padding:18px;background:#fff;border-radius:10px;margin-bottom:10px;border:1px solid #e8e8e8;';
+    card.onclick=()=>openVoiceDetail(r.id);
+    card.innerHTML=`
+      <div style="font-size:12px;color:#888;min-width:90px;">${ds}</div>
+      <div style="overflow:hidden;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+          <span class="badge badge-a">${escHtml(r.category||'')}</span>
+          ${statusBadge}
+        </div>
+        <div style="font-size:14px;color:#222;font-weight:500;line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escHtml((r.content||'').substring(0,200))}</div>
+        <div style="font-size:11px;color:#999;margin-top:6px;">${r.name?'👤 '+escHtml(r.name):'匿名'}${r.contact?' / 📞 '+escHtml(r.contact):''}</div>
+      </div>
+      <div style="color:#bbb;font-size:18px;">›</div>`;
+    list.appendChild(card);
+  });
+}
+
+function openVoiceDetail(id){
+  const r=requests.find(x=>x.id===id);
+  if(!r)return;
+  // 未読を既読に
+  if(!r.status||r.status==='unread'){
+    updateRequestStatus(id,'read');
+  }
+  const d=r.created?new Date(r.created):null;
+  const ds=d?`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`:'-';
+  document.getElementById('voice-detail-body').innerHTML=`
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:4px;">カテゴリ</div>
+      <span class="badge badge-a">${escHtml(r.category||'')}</span>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:4px;">受信日時</div>
+      <div style="font-size:14px;">${ds}</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:4px;">お名前</div>
+      <div style="font-size:14px;">${r.name?escHtml(r.name):'<span style="color:#999;">匿名</span>'}</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:4px;">ご連絡先</div>
+      <div style="font-size:14px;">${r.contact?escHtml(r.contact):'<span style="color:#999;">なし</span>'}</div>
+    </div>
+    <div style="margin-bottom:6px;">
+      <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:6px;">内容</div>
+      <div style="font-size:14px;line-height:1.8;background:#f8fafa;padding:14px;border-radius:8px;white-space:pre-wrap;">${escHtml(r.content||'')}</div>
+    </div>`;
+  const isDone=r.status==='done';
+  document.getElementById('voice-detail-foot').innerHTML=`
+    <button class="btn btn-danger" onclick="deleteRequest('${r.id}')" style="margin-right:auto;">🗑 削除</button>
+    <button class="btn btn-outline" onclick="closeModal('modal-voice-detail')">閉じる</button>
+    ${isDone
+      ? `<button class="btn btn-outline" onclick="updateRequestStatus('${r.id}','read')">未対応に戻す</button>`
+      : `<button class="btn btn-primary" onclick="updateRequestStatus('${r.id}','done');closeModal('modal-voice-detail');">✓ 対応済みにする</button>`}`;
+  openModal('modal-voice-detail');
+}
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -1206,7 +1537,7 @@ function showModeSelect(){document.getElementById('lock-mode-select').style.disp
 function showAdminPw(){document.getElementById('lock-mode-select').style.display='none';document.getElementById('lock-pw-area').classList.add('show');setTimeout(()=>document.getElementById('pw-input').focus(),100);}
 function loginAdmin(){const pw=document.getElementById('pw-input').value;if(pw===ADMIN_PASSWORD){document.getElementById('lock-error').style.display='none';enterAdmin();}else{document.getElementById('lock-error').style.display='block';document.getElementById('pw-input').value='';}}
 function loginGeneral(){enterGeneral();}
-function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';const tc=document.getElementById('topbar-count');if(tc)tc.textContent=supporters.length;renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
+function enterAdmin(){currentMode='admin';sessionStorage.setItem('wk_mode','admin');document.getElementById('lock-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('admin-screen').style.display='flex';const tc=document.getElementById('topbar-count');if(tc)tc.textContent=supporters.length;renderDashboard();renderSupporters();const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();syncRequestsFromCloud();updateVoicesBadge();}
 function enterGeneral(){currentMode='general';sessionStorage.setItem('wk_mode','general');document.getElementById('lock-screen').style.display='none';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='block';const now=new Date();gCalYear=now.getFullYear();gCalMonth=now.getMonth();renderGeneralCalendar();}
 function logoutToLock(){sessionStorage.removeItem('wk_mode');currentMode='';document.getElementById('admin-screen').style.display='none';document.getElementById('general-screen').style.display='none';document.getElementById('lock-screen').style.display='flex';showModeSelect();}
 
@@ -1287,7 +1618,7 @@ function generalRegister(){
 }
 
 /* ── ADMIN ── */
-function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理',settings:'設定'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();if(name==='settings')updateTokenStatusDisplay();}
+function showPage(name,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');el.classList.add('active');const titles={dashboard:'ダッシュボード',supporters:'支援者名簿',schedule:'スケジュール管理',voices:'ご意見・要望',settings:'設定'};document.getElementById('topbar-title').textContent=titles[name]||name;if(name==='dashboard')renderDashboard();if(name==='supporters')renderSupporters();if(name==='schedule')renderCalendar();if(name==='voices'){syncRequestsFromCloud();renderVoices();}if(name==='settings')updateTokenStatusDisplay();}
 function renderDashboard(){const now=new Date();const tm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');document.getElementById('stat-total').textContent=supporters.length;document.getElementById('stat-ojibo').textContent=supporters.filter(s=>s.area==='王子保地区').length;document.getElementById('stat-schedule').textContent=schedules.length;document.getElementById('stat-new').textContent=supporters.filter(s=>s.created&&s.created.startsWith(tm)).length;const tbody=document.getElementById('recent-supporters');tbody.innerHTML='';supporters.slice(0,8).forEach(s=>{const d=s.created?new Date(s.created):null;const ds=d?`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`:'-';tbody.innerHTML+=`<tr><td style="font-weight:700;">${escHtml(s.name)}</td><td>${areaTag(s.area)}</td><td>${escHtml(s.relation||'')}</td><td>${levelBadge(s.level)}</td><td style="font-size:12px;color:#888;">${ds}</td></tr>`;});if(!supporters.length)tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:#aaa;">支援者がいません</td></tr>';}
 function renderSupporters(){const q=(document.getElementById('search-input')?.value||'').toLowerCase();const filtered=supporters.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.area||'').toLowerCase().includes(q));const tbody=document.getElementById('supporters-tbody');tbody.innerHTML='';if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa;">該当なし</td></tr>';return;}filtered.forEach(s=>{tbody.innerHTML+=`<tr style="cursor:pointer;" onclick="openDetailModal('${s.id}')"><td style="font-weight:700;">${escHtml(s.name)}</td><td>${areaTag(s.area)}</td><td style="font-size:12px;">${escHtml(s.tel||'-')}</td><td style="font-size:12px;color:#555;">${escHtml(s.addr||'-')}</td><td>${escHtml(s.relation||'')}</td><td>${levelBadge(s.level)}</td><td onclick="event.stopPropagation()"><button class="btn btn-edit" onclick="openEditModal('${s.id}')">編集</button><button class="btn btn-danger" onclick="openDeleteModal('${s.id}')" style="margin-left:4px;">削除</button></td></tr>`;});}
 function areaTag(a){return a==='王子保地区'?`<span class="badge badge-a">${a}</span>`:`<span style="font-size:12px;color:#666;">${escHtml(a||'')}</span>`;}
@@ -1358,6 +1689,7 @@ else if(savedMode==='general')enterGeneral();
 setInterval(function(){
   if(currentMode==='admin'||currentMode==='general'){
     syncFromCloud(false); // silentモード（トーストなし）
+    syncRequestsFromCloud(false); // 要望も同期
   }
 },15000); // 15秒ごと
 
