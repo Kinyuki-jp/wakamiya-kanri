@@ -227,21 +227,137 @@ tbody td { padding: 12px 16px; font-size: 13px; color: #222222; }
 .excel-bar { background: #fff; border: 1px solid #dde8e8; padding: 12px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
 .excel-bar-info { font-size: 12px; color: var(--gray); }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+/* ===== タブレット（768px以下）===== */
 @media (max-width: 768px) {
-  .sidebar { width: 160px; }
-  .sidebar-logo, .sidebar-photo-name, .sidebar-photo-sub { display: none; }
-  .nav-item { padding: 13px 14px; gap: 8px; }
-  .nav-item span { font-size: 12px; }
-  .main { margin-left: 160px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .content { padding: 20px 16px; }
-  .topbar { padding: 16px 20px; }
-  .form-row { grid-template-columns: 1fr; }
+  /* 管理画面のサイドバーを下部ナビに変換 */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid rgba(0,138,150,0.4);
+    z-index: 100;
+    background: #1a2e30;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .sidebar-logo, .sidebar-photo, .sidebar-footer { display: none; }
+  .sidebar-nav {
+    display: flex;
+    width: 100%;
+    padding: 0;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: stretch;
+  }
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    padding: 10px 4px 8px;
+    gap: 4px;
+    border-left: none !important;
+    border-top: 3px solid transparent;
+    min-height: 56px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .nav-item.active {
+    border-left-color: transparent !important;
+    border-top-color: var(--asagi);
+  }
+  .nav-icon { font-size: 20px; width: auto; }
+  .nav-item span { font-size: 11px; line-height: 1.2; }
+
+  /* メイン領域 */
+  .main { margin-left: 0; margin-bottom: 70px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .stat-num { font-size: 28px; }
+  .stat-label { font-size: 11px; }
+  .content { padding: 16px 14px; }
+
+  /* トップバー */
+  .topbar { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+  .topbar-title { font-size: 16px; }
+  .topbar-sub { font-size: 11px; }
+  .topbar-badge { font-size: 11px; padding: 6px 10px; }
+
+  /* 入力フォーム：iOS自動ズーム防止のため16px必須 */
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .form-input, .form-select { font-size: 16px; padding: 13px 14px; min-height: 44px; }
+  .form-label { font-size: 13px; }
+  .reg-form-card { padding: 24px 18px; }
+  .reg-form-input, .reg-form-textarea { font-size: 16px; padding: 14px; min-height: 44px; }
+  .reg-form-title { font-size: 18px; }
+  .reg-form-label { font-size: 13px; }
+
+  /* ボタン：タッチターゲット最低44px */
+  .btn { min-height: 44px; padding: 11px 16px; font-size: 14px; }
+  .btn-edit, .btn-danger { min-height: 36px; padding: 8px 12px; font-size: 12px; }
+  .lock-btn-general, .lock-btn-admin { min-height: 48px; }
+
+  /* カレンダー */
   .cal-grid { overflow-x: auto; }
-  .g-hero { flex-direction: column; text-align: center; padding: 32px 20px; }
-  .g-tabs { overflow-x: auto; }
-  .g-tab { padding: 12px 16px; font-size: 12px; white-space: nowrap; }
-  .g-content { padding: 20px 16px; }
+  .cal-cell { min-height: 64px; padding: 4px 3px; }
+  .cal-day { font-size: 12px; }
+  .cal-add-btn { width: 22px; height: 22px; font-size: 14px; }
+  .cal-event { font-size: 10px; padding: 2px 4px; }
+
+  /* 一般画面 */
+  .g-hero { flex-direction: column; text-align: center; padding: 28px 20px 24px; }
+  .g-hero img { width: 100px; height: 100px; }
+  .g-hero h1 { font-size: 28px; }
+  .g-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0; }
+  .g-tab { padding: 14px 18px; font-size: 13px; white-space: nowrap; min-height: 50px; display: flex; align-items: center; }
+  .g-content { padding: 20px 16px 40px; }
+
+  /* テーブル */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table th, table td { padding: 12px 8px; font-size: 13px; white-space: nowrap; }
+
+  /* モーダル：スマホは全画面 */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal { max-width: 100% !important; width: 100%; max-height: 95vh; border-radius: 16px 16px 0 0; }
+  .modal-head { padding: 16px 18px; position: sticky; top: 0; background: #fff; z-index: 5; border-bottom: 1px solid #eee; }
+  .modal-title { font-size: 16px; }
+  .modal-body { padding: 18px; }
+  .modal-foot { padding: 14px 18px; position: sticky; bottom: 0; background: #fff; border-top: 1px solid #eee; gap: 10px; flex-wrap: wrap; }
+  .modal-foot .btn { flex: 1 1 auto; min-width: 120px; }
+  .modal-close { width: 40px; height: 40px; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+
+  /* リストアイテム：タップ領域広め */
+  .schedule-item { padding: 16px; gap: 12px; flex-wrap: wrap; }
+  .supporter-card { padding: 14px; gap: 12px; min-height: 56px; }
+  .supporter-card-avatar { width: 40px; height: 40px; font-size: 16px; }
+  .supporter-card-name { font-size: 14px; }
+  .supporter-card-area { font-size: 12px; }
+
+  /* セクションタイトル */
+  .section-title { font-size: 15px; margin-bottom: 14px; padding-bottom: 10px; }
+}
+
+/* ===== スマホ縦（480px以下）===== */
+@media (max-width: 480px) {
+  .topbar { padding: 10px 12px; }
+  .topbar-badge { display: none; } /* スペース確保 */
+  .stat-num { font-size: 24px; }
+  .content { padding: 14px 12px; }
+  .g-hero h1 { font-size: 24px; }
+  .g-tab { padding: 12px 14px; font-size: 12px; }
+  .nav-item span { font-size: 10px; }
+  .modal-title { font-size: 15px; }
+}
+
+/* ===== 超小型スマホ（360px以下）===== */
+@media (max-width: 360px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .nav-item { padding: 8px 2px; }
+  .nav-icon { font-size: 18px; }
 }
 </style>
 </head>
